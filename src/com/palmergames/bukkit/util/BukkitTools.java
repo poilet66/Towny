@@ -61,19 +61,7 @@ public class BukkitTools {
 	}
 	
 	public static Player getPlayer(String playerId) {
-		
 		return getServer().getPlayer(playerId);
-		
-//		if (playerId.length() < 36) {
-//			
-//			return getServer().getPlayer(playerId);
-//			
-//		} else {
-//			
-//			return getServer().getPlayer(UUID.fromString(playerId));
-//			
-//		}
-		
 	}
 	
 	/**
@@ -83,19 +71,7 @@ public class BukkitTools {
 	 * @return a true value if online
 	 */
 	public static boolean isOnline(String playerId) {
-		
 		return getServer().getPlayer(playerId) != null;
-		
-//		if (playerId.length() < 36) {
-//			
-//			return getServer().getPlayer(playerId) != null;
-//			
-//		} else {
-//			
-//			return getServer().getPlayer(UUID.fromString(playerId)) != null;
-//			
-//		}	
-		
 	}
 	
 	public static List<World> getWorlds() {
@@ -207,29 +183,28 @@ public class BukkitTools {
 		return block.getWorld().getBlockAt(block.getX() + xOffset, block.getY() + yOffset, block.getZ() + zOffset);
 	}
 	
-	public static int getTypeId(Block block) {
-		
+	@Deprecated
+	public static int getTypeId(Block block) {		
 		return block.getTypeId();
 	}
 	
-	public static byte getData(Block block) {
-		
+	@Deprecated
+	public static byte getData(Block block) {		
 		return block.getData();
 	}
 	
-	public static void setTypeIdAndData(Block block, int type, byte data, boolean applyPhysics) {
-		
-		block.setTypeIdAndData(type, data, applyPhysics);
-		
+	@Deprecated
+	public static void setTypeIdAndData(Block block, int type, byte data, boolean applyPhysics) {		
+		block.setTypeIdAndData(type, data, applyPhysics);		
 	}
 	
-	public static void setTypeId(Block block, int type, boolean applyPhysics) {
-		
+	@Deprecated
+	public static void setTypeId(Block block, int type, boolean applyPhysics) {		
 		block.setTypeId(type, applyPhysics);
 	}
 	
-	public static void setData(Block block, byte data, boolean applyPhysics) {
-		
+	@Deprecated
+	public static void setData(Block block, byte data, boolean applyPhysics) {		
 		block.setData(data, applyPhysics);
 	}
 	
@@ -244,6 +219,7 @@ public class BukkitTools {
 		return state.getType();
 	}
 	
+	@Deprecated
 	public static int getTypeId(BlockState state) {
 		
 		return state.getTypeId();
@@ -255,6 +231,7 @@ public class BukkitTools {
 		return state.getData();
 	}
 	
+	@Deprecated
 	public static byte getDataData(BlockState state) {
 		
 		return getData(state).getData();
@@ -265,7 +242,7 @@ public class BukkitTools {
 	 * Item Handling Methods
 	 */
 	
-	
+	@Deprecated
 	public static int getTypeId(ItemStack stack) {
 		
 		return stack.getTypeId();
@@ -276,6 +253,7 @@ public class BukkitTools {
 		return stack.getData();
 	}
 	
+	@Deprecated
 	public static byte getDataData(ItemStack stack) {
 		
 		return getData(stack).getData();

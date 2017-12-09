@@ -2671,6 +2671,7 @@ v0.92.0.2:
       - Set to 0 to have no cap.
     - Language files bumped to 0.36
     - Friendly fire message now displays.
+    - Language files bumped to 0.37
     - New Command: /ta tpplot {world} {x} {z}
       - Requires towny.admin permission node
       - teleports admin to the Towny chunk coordinates seen in the /towny map command.
@@ -2683,3 +2684,8 @@ v0.92.0.2:
       - If the notification.owner option should show name or {title} name. Titles are the ones granted by nation kings.
     - Fix for the minimum_amount_of_residents_in_town_for_outpost option in the config breaking claiming normal, non-outpost chunks.
       - Credit goes to Wolf2323 for finding and fixing this bug.
+    - REQUIRED CONFIG ADDITION:
+      - EXPLOSIVE_MINECART,POWERED_MINECART,COMMAND_MINECART,HOPPER_MINECART
+      - added to protection.item_use_ids 
+    - Begin using PlayerEnterTown and PlayerLeaveTown events for the MC Titles on entering town, jailed residents are escaping town, outlaws entering towns.
+    - Deprecate and replace the use of BlockIDs in the playercache and the blocks permission checks, new methods use Material.

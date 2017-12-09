@@ -29,9 +29,9 @@ import com.palmergames.bukkit.towny.regen.block.BlockLocation;
 import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
 import com.palmergames.bukkit.towny.war.eventwar.War;
 import com.palmergames.bukkit.towny.war.flagwar.TownyWarConfig;
-import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.Colors;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -121,8 +121,7 @@ public class TownyPlayerListener implements Listener {
 			return;
 		}
 
-		Player player = event.getPlayer();
-		TownyMessaging.sendDebugMsg("onPlayerDeath: " + player.getName());
+		Player player = event.getPlayer();		
 
 		if (!TownySettings.isTownRespawning())
 			return;
@@ -135,9 +134,7 @@ public class TownyPlayerListener implements Listener {
 			if (resident.isJailed()) {
 				Town respawnTown = TownyUniverse.getDataSource().getTown(resident.getJailTown()); 
 				respawn = respawnTown.getJailSpawn(resident.getJailSpawn());
-//				resident.setJailed(false);
 				event.setRespawnLocation(respawn);
-//				resident.setJailed(true);
 				return;
 			} else {				
 				respawn = plugin.getTownyUniverse().getTownSpawnLocation(player);
@@ -147,11 +144,9 @@ public class TownyPlayerListener implements Listener {
 		
 				// Bed spawn or town.
 				if (TownySettings.getBedUse() && (player.getBedSpawnLocation() != null)) {		
-					event.setRespawnLocation(player.getBedSpawnLocation());
-		
+					event.setRespawnLocation(player.getBedSpawnLocation());		
 				} else {		
-					event.setRespawnLocation(respawn);
-		
+					event.setRespawnLocation(respawn);		
 				}
 			}
 
@@ -191,7 +186,15 @@ public class TownyPlayerListener implements Listener {
 		event.setCancelled(onPlayerInteract(event.getPlayer(), event.getBlockClicked(), event.getItemStack()));
 
 	}
-
+	
+	/*
+	 * PlayerInteractEvent 
+	 * 
+	 *  Used to stop trampling of crops,
+	 *  admin infotool,
+	 *  item use check,
+	 *  switch use check
+	 */
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerInteract(PlayerInteractEvent event) {
 
@@ -219,7 +222,8 @@ public class TownyPlayerListener implements Listener {
 
 		if ((event.getAction() == Action.PHYSICAL)) {
 			if ((block.getType() == Material.SOIL))				
-				if (World.isDisablePlayerTrample() || !PlayerCacheUtil.getCachePermission(player, block.getLocation(), BukkitTools.getTypeId(block), BukkitTools.getData(block), TownyPermission.ActionType.DESTROY)) {
+				if (World.isDisablePlayerTrample() || 
+					!PlayerCacheUtil.getCachePermission(player, block.getLocation(), block.getType(), TownyPermission.ActionType.DESTROY)) {
 					event.setCancelled(true);
 					return;
 				}
@@ -239,8 +243,8 @@ public class TownyPlayerListener implements Listener {
 
 						TownyMessaging.sendMessage(player, Arrays.asList(
 								ChatTools.formatTitle("Block Info"),
-								ChatTools.formatCommand("", "Block Type", "", block.getType().name()),
-								ChatTools.formatCommand("", "Data value", "", Byte.toString(BukkitTools.getData(block)))
+								ChatTools.formatCommand("", "Material", "", block.getType().name()),								
+								ChatTools.formatCommand("", "MaterialData", "", block.getType().getData().toString())
 								));
 
 						event.setCancelled(true);
@@ -256,7 +260,9 @@ public class TownyPlayerListener implements Listener {
 		}
 
 		if (event.getClickedBlock() != null) {
-			// Towny regen
+			// Towny regen feature, added via PR by one-time contributor, no longer supported.
+			// Feature doesn't work very well, broken chests drop items. 
+			// Should probably be removed.
 			if (TownySettings.getRegenDelay() > 0) {
 				if (event.getClickedBlock().getState().getData() instanceof Attachable) {
 					Attachable attachable = (Attachable) event.getClickedBlock().getState().getData();
@@ -277,6 +283,13 @@ public class TownyPlayerListener implements Listener {
 
 	}
 
+	/*
+	 * PlayerInteractAtEntity event
+	 * 
+	 * Handles protection of Armor Stands,
+	 * Admin infotool for entities.
+	 * 
+	 */	
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerInteractEntity(PlayerInteractAtEntityEvent event) {
 
@@ -302,7 +315,7 @@ public class TownyPlayerListener implements Listener {
 
 			Player player = event.getPlayer();
 			boolean bBuild = true;
-			int blockID = 0;
+			Material block = null;
 
 			/*
 			 * Protect specific entity interactions.
@@ -312,9 +325,10 @@ public class TownyPlayerListener implements Listener {
 			case ARMOR_STAND:
 				
 				TownyMessaging.sendDebugMsg("ArmorStand Right Clicked");
-				blockID = 416;
+				//blockID = 416;
+				block = Material.ARMOR_STAND;
 				// Get permissions (updates if none exist)
-				bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), blockID, (byte) 0, TownyPermission.ActionType.DESTROY);
+				bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.DESTROY);
 				break;
 			
 			default:
@@ -322,7 +336,7 @@ public class TownyPlayerListener implements Listener {
 
 			}
 
-			if (blockID != 0) {
+			if (block != null) {
 
 				// Allow the removal if we are permitted
 				if (bBuild)
@@ -370,6 +384,13 @@ public class TownyPlayerListener implements Listener {
 		}
 
 	}
+	
+	/*
+	 * PlayerInteractEntity event
+	 * 
+	 * Handles right clicking of entities: Item Frames, Paintings, Minecarts,
+	 * Admin infotool for entities.
+	 */
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
 
@@ -395,63 +416,81 @@ public class TownyPlayerListener implements Listener {
 
 			Player player = event.getPlayer();
 			boolean bBuild = true;
-			int blockID = 0;
+			Material block = null;
 
 			/*
 			 * Protect specific entity interactions.
 			 */
+
 			switch (event.getRightClicked().getType()) {
 			
-			case ITEM_FRAME:
+				case ITEM_FRAME:					
+					TownyMessaging.sendDebugMsg("ItemFrame Right Clicked");
+					block = Material.ITEM_FRAME;
+					// Get permissions (updates if none exist)
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.DESTROY);
+					break;
+	
+				case PAINTING:	
+					block = Material.PAINTING;
+					// Get permissions (updates if none exist)
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.DESTROY);
+					break;
+	
+				case MINECART:					
+					block = Material.MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
+					
+				case MINECART_CHEST:					
+					block = Material.STORAGE_MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
 				
-				TownyMessaging.sendDebugMsg("ItemFrame Right Clicked");
-				blockID = 389;
-				// Get permissions (updates if none exist)
-				bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), blockID, (byte) 0, TownyPermission.ActionType.DESTROY);
-				break;
-
-			case PAINTING:
-
-				blockID = 321;
-				// Get permissions (updates if none exist)
-				bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), blockID, (byte) 0, TownyPermission.ActionType.DESTROY);
-				break;
-
-			case MINECART:
-
-				if (event.getRightClicked() instanceof org.bukkit.entity.minecart.StorageMinecart) {
-
-					blockID = 342;
-
-				} else if (event.getRightClicked() instanceof org.bukkit.entity.minecart.RideableMinecart) {
-
-					blockID = 328;
-
-				} else if (event.getRightClicked() instanceof org.bukkit.entity.minecart.PoweredMinecart) {
-
-					blockID = 343;
-
-				} else if (event.getRightClicked() instanceof org.bukkit.entity.minecart.HopperMinecart) {
-
-					blockID = 408;
-
-				} else {
-
-					blockID = 321;
-				}
-
-				if ((blockID != 0) && (!TownySettings.isSwitchMaterial(BukkitTools.getMaterial(blockID).name())))
-					return;
-
-				// Get permissions (updates if none exist)
-				bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), blockID, (byte) 0, TownyPermission.ActionType.SWITCH);
-				break;
-			default:
-				break;
-
+				case MINECART_FURNACE:					
+					block = Material.POWERED_MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
+				
+				case MINECART_COMMAND:					
+					block = Material.COMMAND_MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
+				
+				case MINECART_HOPPER:					
+					block = Material.HOPPER_MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
+	
+				case MINECART_TNT:					
+					block = Material.EXPLOSIVE_MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
+			
+				case MINECART_MOB_SPAWNER:					
+					block = Material.MINECART;
+					if ((block != null) && (!TownySettings.isSwitchMaterial(block.name())))
+						return;
+					bBuild = PlayerCacheUtil.getCachePermission(player, event.getRightClicked().getLocation(), block, TownyPermission.ActionType.SWITCH);
+					break;
+	
+				default:
+					break;
 			}
 
-			if (blockID != 0) {
+			if (block != null) {
 
 				// Allow the removal if we are permitted
 				if (bBuild)
@@ -686,7 +725,10 @@ public class TownyPlayerListener implements Listener {
 		}
 		
 	}
-
+	
+	/*
+	 *  ItemUse protection handling
+	 */	
 	public boolean onPlayerInteract(Player player, Block block, ItemStack item) {
 
 		boolean cancelState = false;
@@ -704,14 +746,14 @@ public class TownyPlayerListener implements Listener {
 			boolean bItemUse;
 
 			if (block != null)
-				bItemUse = PlayerCacheUtil.getCachePermission(player, block.getLocation(), BukkitTools.getTypeId(item), BukkitTools.getDataData(item), TownyPermission.ActionType.ITEM_USE);
+				bItemUse = PlayerCacheUtil.getCachePermission(player, block.getLocation(), item.getType(), TownyPermission.ActionType.ITEM_USE);
 			else
-				bItemUse = PlayerCacheUtil.getCachePermission(player, player.getLocation(), BukkitTools.getTypeId(item), BukkitTools.getDataData(item), TownyPermission.ActionType.ITEM_USE);
+				bItemUse = PlayerCacheUtil.getCachePermission(player, player.getLocation(), item.getType(), TownyPermission.ActionType.ITEM_USE);
 
-			boolean wildOverride = TownyUniverse.getPermissionSource().hasWildOverride(worldCoord.getTownyWorld(), player, BukkitTools.getTypeId(item), BukkitTools.getDataData(item), TownyPermission.ActionType.ITEM_USE);
+			boolean wildOverride = TownyUniverse.getPermissionSource().hasWildOverride(worldCoord.getTownyWorld(), player, item.getType(), TownyPermission.ActionType.ITEM_USE);
 
 			PlayerCache cache = plugin.getCache(player);
-			// cache.updateCoord(worldCoord);
+
 			try {
 
 				TownBlockStatus status = cache.getStatus();
@@ -719,10 +761,12 @@ public class TownyPlayerListener implements Listener {
 					return cancelState;
 
 				// Allow item_use if we have an override
-				if (((status == TownBlockStatus.TOWN_RESIDENT) && (TownyUniverse.getPermissionSource().hasOwnTownOverride(player, BukkitTools.getTypeId(item), BukkitTools.getDataData(item), TownyPermission.ActionType.ITEM_USE))) || (((status == TownBlockStatus.OUTSIDER) || (status == TownBlockStatus.TOWN_ALLY) || (status == TownBlockStatus.ENEMY)) && (TownyUniverse.getPermissionSource().hasAllTownOverride(player, BukkitTools.getTypeId(item), BukkitTools.getDataData(item), TownyPermission.ActionType.ITEM_USE))))
+				if (((status == TownBlockStatus.TOWN_RESIDENT) && (TownyUniverse.getPermissionSource().hasOwnTownOverride(player, item.getType(), TownyPermission.ActionType.ITEM_USE))) 
+						|| (((status == TownBlockStatus.OUTSIDER) || (status == TownBlockStatus.TOWN_ALLY) || (status == TownBlockStatus.ENEMY)) 
+						&& (TownyUniverse.getPermissionSource().hasAllTownOverride(player, item.getType(), TownyPermission.ActionType.ITEM_USE))))
 					return cancelState;
 				
-								// Allow item_use for Event War if isAllowingItemUseInWarZone is true,
+				// Allow item_use for Event War if isAllowingItemUseInWarZone is true,
 				boolean playerNeutral = false;
 				if (TownyUniverse.isWarTime()) {			
 					try {
@@ -736,7 +780,8 @@ public class TownyPlayerListener implements Listener {
 					} catch (NotRegisteredException e) {
 					}			
 				}
-
+				
+				// FlagWar here
 				if (status == TownBlockStatus.WARZONE || (TownyUniverse.isWarTime() && status == TownBlockStatus.ENEMY && !playerNeutral)) {
 					if (!TownyWarConfig.isAllowingItemUseInWarZone()) {
 						cancelState = true;
@@ -744,17 +789,13 @@ public class TownyPlayerListener implements Listener {
 					}
 					return cancelState;
 				}
+				
+				// Wilderness Handled here.
 				if (((status == TownBlockStatus.UNCLAIMED_ZONE) && (!wildOverride)) || ((!bItemUse) && (status != TownBlockStatus.UNCLAIMED_ZONE))) {
-					// if (status == TownBlockStatus.UNCLAIMED_ZONE)
-					// TownyMessaging.sendErrorMsg(player,
-					// String.format(TownySettings.getLangString("msg_err_cannot_perform_action"),
-					// world.getUnclaimedZoneName()));
-
 					cancelState = true;
 				}
 
-				if ((cache.hasBlockErrMsg())) // && (status !=
-												// TownBlockStatus.UNCLAIMED_ZONE))
+				if ((cache.hasBlockErrMsg()))
 					TownyMessaging.sendErrorMsg(player, cache.getBlockErrMsg());
 
 			} catch (NullPointerException e) {
@@ -782,13 +823,16 @@ public class TownyPlayerListener implements Listener {
 
 	}
 
+	/*
+	 *  Switch protection handling
+	 */	
 	public boolean onPlayerSwitchEvent(Player player, Block block, String errMsg, TownyWorld world) {
 
 		if (!TownySettings.isSwitchMaterial(block.getType().name()))
 			return false;
 
 		// Get switch permissions (updates if none exist)
-		boolean bSwitch = PlayerCacheUtil.getCachePermission(player, block.getLocation(), BukkitTools.getTypeId(block), BukkitTools.getData(block), TownyPermission.ActionType.SWITCH);
+		boolean bSwitch = PlayerCacheUtil.getCachePermission(player, block.getLocation(), block.getType(), TownyPermission.ActionType.SWITCH);
 
 		// Allow switch if we are permitted
 		if (bSwitch)
@@ -834,6 +878,9 @@ public class TownyPlayerListener implements Listener {
 
 	}
 
+	/*
+	 * PlayerMoveEvent that can fire the PlayerChangePlotEvent
+	 */
 	public void onPlayerMoveChunk(Player player, WorldCoord from, WorldCoord to, Location fromLoc, Location toLoc, PlayerMoveEvent moveEvent) {
 
 		plugin.getCache(player).setLastLocation(toLoc);
@@ -843,102 +890,80 @@ public class TownyPlayerListener implements Listener {
 		Bukkit.getServer().getPluginManager().callEvent(event);
 	}
 	
+	/*
+	 * PlayerChangePlotEvent that can fire the PlayerLeaveTownEvent and PlayerEnterTownEvent
+	 */
 	@EventHandler(priority = EventPriority.NORMAL)
-	public void onPlayerChangePlotEvent(PlayerChangePlotEvent event) {
+	public void onPlayerChangePlotEvent(PlayerChangePlotEvent event) throws IllegalStateException, NotRegisteredException {
 
 		PlayerMoveEvent pme = event.getMoveEvent();
 		Player player = event.getPlayer();		
 		WorldCoord from = event.getFrom();
 		WorldCoord to = event.getTo();
 		try {
-			Resident resident = TownyUniverse.getDataSource().getResident(player.getName());
-			if (TownyUniverse.getDataSource().getResident(player.getName()).isJailed()) {								
-				if (from.getTownBlock().hasTown()) {
-					try {
-						to.getTownBlock();
-					} catch (NotRegisteredException e) {
-						resident.setJailed(false);
-						resident.setJailSpawn(0);
-						resident.setJailTown("");
-						TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_player_escaped_jail_into_wilderness"), player.getName(), TownyUniverse.getDataSource().getWorld(player.getLocation().getWorld().getName()).getUnclaimedZoneName()));								
-						TownyUniverse.getDataSource().saveResident(resident);
-						
-					}
-				}
-			}
-			if (TownySettings.isNotificationUsingTitles()) {
-				if (to.getTownBlock().hasTown()) {
-					try {
-						Town fromTown = from.getTownBlock().getTown();
-						if (!to.getTownBlock().getTown().equals(fromTown)) {
-							TownyMessaging.sendTitleMessageToResident(resident, "", TownyFormatter.getFormattedTownName(to.getTownBlock().getTown()).toString());
-							return;
-						}
-
-					} catch (NotRegisteredException e) {
-						Town town = to.getTownBlock().getTown();
-						TownyMessaging.sendTitleMessageToResident(resident, "", TownyFormatter.getFormattedTownName(town).toString());
-					}
-				}
-			}
-			try {
-				to.getTownBlock();
-				if (to.getTownBlock().hasTown()) { 
-					try {
-						Town fromTown = from.getTownBlock().getTown();
-						if (!to.getTownBlock().getTown().equals(fromTown)){
-							Bukkit.getServer().getPluginManager().callEvent(new PlayerEnterTownEvent(player,to,from,to.getTownBlock().getTown(), pme)); // From Town into different Town.
-							Bukkit.getServer().getPluginManager().callEvent(new PlayerLeaveTownEvent(player,to,from,from.getTownBlock().getTown(), pme));//
-						} else {
-							// Both are the same town, do nothing, no Event should fire here.
-						}
-					} catch (NotRegisteredException e) { // From Wilderness into Town.
-						Bukkit.getServer().getPluginManager().callEvent(new PlayerEnterTownEvent(player,to, from, to.getTownBlock().getTown(), pme));
-					}
-				} else {
-					if (from.getTownBlock().hasTown() && !(to.getTownBlock().hasTown())){ // From has a town, to doesn't so: From Town into Wilderness
-						Bukkit.getServer().getPluginManager().callEvent(new PlayerLeaveTownEvent(player,to,from, from.getTownBlock().getTown(), pme));
-					}
-				}
-			} catch (NotRegisteredException e) {
-				Bukkit.getServer().getPluginManager().callEvent(new PlayerLeaveTownEvent(player,to,from, from.getTownBlock().getTown(), pme));
-			}
-
-		} catch (NotRegisteredException e) {
-			// If not registered, it is most likely an NPC			
-		} catch (TownyException e) {
-		}
-		
-	}
-	
-	@EventHandler(priority = EventPriority.NORMAL)
-	public void onOutlawEnterTown(PlayerChangePlotEvent event) {
-		
-		Player player = event.getPlayer();		
-		WorldCoord from = event.getFrom();
-		WorldCoord to = event.getTo();
-		try {
-			Resident resident = TownyUniverse.getDataSource().getResident(player.getName());
-			if (to.getTownBlock().hasTown()) {
+			to.getTownBlock();
+			if (to.getTownBlock().hasTown()) { 
 				try {
 					Town fromTown = from.getTownBlock().getTown();
-					if (!to.getTownBlock().getTown().equals(fromTown)) {
-						if (to.getTownBlock().getTown().hasOutlaw(resident))
-							TownyMessaging.sendMsg(player, String.format(TownySettings.getLangString("msg_you_are_an_outlaw_in_this_town"),to.getTownBlock().getTown()));
-						return;
-						}
-
-				} catch (NotRegisteredException e) {
-					Town town = to.getTownBlock().getTown();
-					if (town.hasOutlaw(resident))
-						TownyMessaging.sendMsg(player, String.format(TownySettings.getLangString("msg_you_are_an_outlaw_in_this_town"),town));
-				}			
+					if (!to.getTownBlock().getTown().equals(fromTown)){
+						Bukkit.getServer().getPluginManager().callEvent(new PlayerLeaveTownEvent(player,to,from,from.getTownBlock().getTown(), pme));//
+						Bukkit.getServer().getPluginManager().callEvent(new PlayerEnterTownEvent(player,to,from,to.getTownBlock().getTown(), pme)); // From Town into different Town.						
+					} else {
+						// Both are the same town, do nothing, no Event should fire here.
+					}
+				} catch (NotRegisteredException e) { // From Wilderness into Town.
+					Bukkit.getServer().getPluginManager().callEvent(new PlayerEnterTownEvent(player,to, from, to.getTownBlock().getTown(), pme));
+				}
+			} else {
+				if (from.getTownBlock().hasTown() && !(to.getTownBlock().hasTown())){ // From has a town, to doesn't so: From Town into Wilderness
+					Bukkit.getServer().getPluginManager().callEvent(new PlayerLeaveTownEvent(player,to,from, from.getTownBlock().getTown(), pme));
+				}
 			}
-
 		} catch (NotRegisteredException e) {
-			// If not registered, it is most likely an NPC			
-		} catch (TownyException e) {
+			Bukkit.getServer().getPluginManager().callEvent(new PlayerLeaveTownEvent(player,to,from, from.getTownBlock().getTown(), pme));
 		}
+	}
+	
+	/*
+	 * Handles showing the minecraft title upon entering a town,
+	 * when the config option is set to true.
+	 */
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onPlayerEnterTown(PlayerEnterTownEvent event) throws TownyException {
+		if (TownySettings.isNotificationUsingTitles()) {
+			Resident resident = TownyUniverse.getDataSource().getResident(event.getPlayer().getName());		
+			Town town = event.getEnteredtown();
+			TownyMessaging.sendTitleMessageToResident(resident, "", TownyFormatter.getFormattedTownName(town));
+		}			
+	}
+	
+	/*
+	 * Handles players who are jailed in a town escaping into the wilderness.
+	 */			
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onJailedResidentLeaveTown(PlayerLeaveTownEvent event) throws NotRegisteredException {
+		Player player = event.getPlayer();
 		
+		if (!TownyUniverse.getDataSource().getResident(player.getName()).isJailed() )
+			return;
+		
+		Resident resident = TownyUniverse.getDataSource().getResident(player.getName());		
+		resident.setJailed(false);
+		resident.setJailSpawn(0);
+		resident.setJailTown("");
+		TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_player_escaped_jail_into_wilderness"), player.getName(), TownyUniverse.getDataSource().getWorld(player.getLocation().getWorld().getName()).getUnclaimedZoneName()));								
+		TownyUniverse.getDataSource().saveResident(resident);
+	}
+	
+	/*
+	 * Handles when an outlawed player enters a town, informing them of their outlaw status.
+	 */
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onOutlawEnterTown(PlayerEnterTownEvent event) throws NotRegisteredException {
+
+		Resident resident = TownyUniverse.getDataSource().getResident(event.getPlayer().getName());
+		Town town = event.getEnteredtown();
+		if (town.hasOutlaw(resident))
+			TownyMessaging.sendMsg(event.getPlayer(), String.format(TownySettings.getLangString("msg_you_are_an_outlaw_in_this_town"),town));
 	}
 }

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 
 import com.palmergames.bukkit.towny.TownySettings;
@@ -542,9 +543,9 @@ public class TownyWorld extends TownyObject {
 			return unclaimedZoneIgnoreBlockMaterials;
 	}
 
-	public boolean isUnclaimedZoneIgnoreMaterial(String mat) {
+	public boolean isUnclaimedZoneIgnoreMaterial(Material material) {
 
-		return getUnclaimedZoneIgnoreMaterials().contains(mat);
+		return getUnclaimedZoneIgnoreMaterials().contains(material.toString());
 	}
 
 
