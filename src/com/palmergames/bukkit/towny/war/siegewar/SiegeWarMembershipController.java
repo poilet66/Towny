@@ -29,7 +29,7 @@ public class SiegeWarMembershipController {
 			resident,
 			TownySettings.getLangString("msg_siege_war_resident_leave_town"),
 			true,
-			false);
+			true);
 	}
 	
 	/**
