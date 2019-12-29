@@ -69,7 +69,7 @@ public class SiegeWarDeathController {
 
 				//Did the death occur in the siege death point zone?
 				if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-					SiegeWarPointsUtil.awardSiegeDeathPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
+					SiegeWarPointsUtil.awardSiegePenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
 					return;
 				}
 
@@ -89,7 +89,7 @@ public class SiegeWarDeathController {
 
 					//Did the death occur in the siege death point zone?
 					if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-						SiegeWarPointsUtil.awardSiegeDeathPoints(true, siegeZone.getDefendingTown(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
+						SiegeWarPointsUtil.awardSiegePenaltyPoints(true, siegeZone.getDefendingTown(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
 						return;
 					}
 
@@ -105,7 +105,7 @@ public class SiegeWarDeathController {
 
 							//Did the death occur in the siege death point zone?
 							if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-								SiegeWarPointsUtil.awardSiegeDeathPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
+								SiegeWarPointsUtil.awardSiegePenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
 								return;
 							}
 						}

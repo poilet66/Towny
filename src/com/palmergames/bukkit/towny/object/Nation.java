@@ -358,7 +358,7 @@ public class Nation extends TownyEconomyObject implements ResidentList, TownyInv
 			boolean isCapital = town.isCapital();
 
 			if(TownySettings.getWarSiegeEnabled())
-				SiegeWarMembershipController.evaluateNationRemoveTown(this, town);
+				SiegeWarMembershipController.evaluateNationRemoveTown(town);
 
 			remove(town);
 

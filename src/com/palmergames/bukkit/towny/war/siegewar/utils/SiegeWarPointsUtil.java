@@ -1,14 +1,15 @@
 package com.palmergames.bukkit.towny.war.siegewar.utils;
 
+import com.palmergames.bukkit.towny.TownyFormatter;
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
+import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownyObject;
-import com.palmergames.bukkit.towny.war.siegewar.SiegeWarDeathController;
 import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
 import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
 import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
@@ -94,9 +95,11 @@ public class SiegeWarPointsUtil {
 			if(!resident.hasTown())
 				return;
 
+			Town town;
 			try {
-				Town town = resident.getTown();
+				town = resident.getTown();
 			} catch (NotRegisteredException e) {
+				return;
 			}
 
 			if(town.isOccupied() )
