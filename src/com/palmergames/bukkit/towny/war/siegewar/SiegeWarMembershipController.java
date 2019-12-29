@@ -1,9 +1,11 @@
 package com.palmergames.bukkit.towny.war.siegewar;
 
 import com.palmergames.bukkit.towny.TownySettings;
+import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarPointsUtil;
+import org.bukkit.entity.Player;
 
 /**
  * This class intercepts 'remove' requests, where a resident is removed from a town,
@@ -25,11 +27,28 @@ public class SiegeWarMembershipController {
 	 *  
 	 */
 	public static void evaluateTownRemoveResident(Resident resident) {
-		SiegeWarPointsUtil.evaluateSiegePenaltyPoints(
-			resident,
-			TownySettings.getLangString("msg_siege_war_resident_leave_town"),
-			true,
-			true);
+
+		Player player = TownyAPI.getInstance().getPlayer(resident);
+		if(player == null)
+			return;  //Player not online, or npc
+		
+		TownyUniverse universe = TownyUniverse.getInstance();
+		
+		if(universe.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode())) {
+			SiegeWarPointsUtil.evaluateSiegePenaltyPoints(
+				resident,
+				TownySettings.getLangString("msg_siege_war_resident_leave_town"),
+				true,
+				false);
+		}
+		
+		if(universe.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+			SiegeWarPointsUtil.evaluateSiegePenaltyPoints(
+				resident,
+				TownySettings.getLangString("msg_siege_war_resident_leave_town"),
+				false,
+				true);
+		}
 	}
 	
 	/**
@@ -43,11 +62,20 @@ public class SiegeWarMembershipController {
 	public static void evaluateNationRemoveTown(Town town) {
 
 		for (Resident resident : town.getResidents()) {
-			SiegeWarPointsUtil.evaluateSiegePenaltyPoints(
-				resident,
-				TownySettings.getLangString("msg_siege_war_town_leave_nation"),
-				false,
-				true);
+
+			Player player = TownyAPI.getInstance().getPlayer(resident);
+			if(player == null)
+				return;  //Player not online, or npc
+
+			TownyUniverse universe = TownyUniverse.getInstance();
+
+			if(universe.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+				SiegeWarPointsUtil.evaluateSiegePenaltyPoints(
+					resident,
+					TownySettings.getLangString("msg_siege_war_town_leave_nation"),
+					false,
+					true);
+			}
 		}
 	}
 	
