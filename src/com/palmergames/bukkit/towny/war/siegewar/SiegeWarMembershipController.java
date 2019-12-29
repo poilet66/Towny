@@ -1,5 +1,7 @@
 package com.palmergames.bukkit.towny.war.siegewar;
 
+import com.palmergames.bukkit.towny.permissions.PermissionNodes;
+import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.TownyUniverse;
 import com.palmergames.bukkit.towny.object.Resident;
