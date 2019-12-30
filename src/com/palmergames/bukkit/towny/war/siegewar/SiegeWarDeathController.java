@@ -110,9 +110,44 @@ public class SiegeWarDeathController {
 							}
 						}
 					}
+
+
+				//Was the dead player an ally of the attacking nation, killed by a siege defender ?
+				} else if (killerResidentTown.hasSiege()
+					&& killerResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS) {
+
+					if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode()))
+						return;
+
+					for(SiegeZone siegeZone: killerResidentTown.getSiege().getSiegeZones().values()) {
+						if(siegeZone.getAttackingNation().getAllies().contains(deadResidentNation)
+							&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+
+							SiegeWarPointsUtil.awardSiegePenaltyPoints(true, siegeZone.getDefendingTown(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
+							return;
+						}
+					}
+
+				//Was the dead player an ally of the defending nation, killed by a siege attacker ?
+				} else if (killerResidentTown.hasNation()) {
+					for (SiegeZone siegeZone : killerResidentTown.getNation().getSiegeZones()) {
+						if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+							&& siegeZone.getDefendingTown().hasNation()
+							&& siegeZone.getDefendingTown().getNation() == deadResidentNation
+							&& siegeZone.getDefendingTown().getNation().getAllies().contains(deadResidentNation) {
+
+							if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode()))
+								return;
+
+							//Did the death occur in the siege death point zone?
+							if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+								SiegeWarPointsUtil.awardSiegePenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
+								return;
+							}
+						}
+					}
 				}
 			}
-
 		} catch (NotRegisteredException e) {
 			e.printStackTrace();
 			System.out.println("Error evaluating siege pvp death");
