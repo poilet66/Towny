@@ -110,7 +110,7 @@ public class SiegeWarDeathController {
 							}
 						}
 					}
-					
+
 				//Was the dead player an ally of the attacking nation, killed by a siege defender ?
 				} else if (killerResidentTown.hasSiege()
 					&& killerResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS) {
@@ -126,7 +126,7 @@ public class SiegeWarDeathController {
 							return;
 						}
 					}
-					
+
 				//Was the dead player an ally of the defending nation, killed by a siege attacker ?
 				} else if (killerResidentTown.hasNation()) {
 					for (SiegeZone siegeZone : killerResidentTown.getNation().getSiegeZones()) {
