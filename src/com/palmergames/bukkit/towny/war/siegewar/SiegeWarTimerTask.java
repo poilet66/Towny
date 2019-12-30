@@ -164,7 +164,7 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 							&& siegeZone.getDefendingTown().getNation()
 							.getAllies().contains(residentTown.getNation())) {
 
-							//Nation member of ally of defending town
+							//Nation member of ally of defending nation
 							siegeZoneChanged =
 									siegeZoneChanged ||
 											evaluateSiegeZoneOccupant(
