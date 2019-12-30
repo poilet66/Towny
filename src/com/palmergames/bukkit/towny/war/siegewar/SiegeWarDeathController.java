@@ -134,7 +134,7 @@ public class SiegeWarDeathController {
 						if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
 							&& siegeZone.getDefendingTown().hasNation()
 							&& siegeZone.getDefendingTown().getNation() == deadResidentNation
-							&& siegeZone.getDefendingTown().getNation().getAllies().contains(deadResidentNation) {
+							&& siegeZone.getDefendingTown().getNation().getAllies().contains(deadResidentNation)) {
 
 							if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode()))
 								return;
