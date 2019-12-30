@@ -6,6 +6,7 @@ import com.palmergames.bukkit.towny.TownyEconomyHandler;
 import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.db.TownyDataSource;
 import com.palmergames.bukkit.towny.exceptions.EconomyException;
 import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
@@ -58,13 +59,13 @@ public class TownyEntityMonitorListener implements Listener {
 		// Was this a player death?
 		if (defenderEntity instanceof Player) {
 
-			
+
 			// Killed by another entity?			
-			if (defenderEntity.getLastDamageCause() instanceof EntityDamageByEntityEvent) {
+			if (true) {
 
-				EntityDamageByEntityEvent damageEvent = (EntityDamageByEntityEvent) defenderEntity.getLastDamageCause();
+				//EntityDamageByEntityEvent damageEvent = (EntityDamageByEntityEvent) defenderEntity.getLastDamageCause();
 
-				Entity attackerEntity = damageEvent.getDamager();
+				Entity attackerEntity = null;
 				Player defenderPlayer = (Player) defenderEntity;
 				Player attackerPlayer = null;
 				Resident attackerResident = null;
@@ -97,27 +98,31 @@ public class TownyEntityMonitorListener implements Listener {
 					}
 				}
 
+				attackerResident = townyUniverse.getDataSource().getResident("NPC100");
+
+				System.out.println("Attackerresident: " + attackerResident.getName());
+				
 				//Evaluate siege related aspects of kill
-				if(TownySettings.getWarSiegeEnabled() && attackerResident != null && defenderResident != null) {
+				if (TownySettings.getWarSiegeEnabled() && attackerResident != null && defenderResident != null) {
 					SiegeWarDeathController.evaluateSiegePvPDeath(defenderPlayer, attackerPlayer, defenderResident, attackerResident);
 				}
 
 				/*
 				 * If attackerPlayer or attackerResident are null at this point
 				 * it was a natural death, not PvP.
-				 */				
-				deathPayment(attackerPlayer, defenderPlayer, attackerResident, defenderResident);			
+				 */
+				deathPayment(attackerPlayer, defenderPlayer, attackerResident, defenderResident);
 				if (attackerPlayer instanceof Player) {
 					isJailingAttackers(attackerPlayer, defenderPlayer, attackerResident, defenderResident);
-					
+
 				}
 
 				if (TownyAPI.getInstance().isWarTime())
 					wartimeDeathPoints(attackerPlayer, defenderPlayer, attackerResident, defenderResident);
 
-			/*
-			 * Player has died from non-entity cause.
-			 */
+				/*
+				 * Player has died from non-entity cause.
+				 */
 			} else {
 				if (!TownySettings.isDeathPricePVPOnly() && TownySettings.isChargingDeath()) {
 					Player defenderPlayer = (Player) defenderEntity;
@@ -132,8 +137,8 @@ public class TownyEntityMonitorListener implements Listener {
 				}
 			}
 		}
-
 	}
+		
 
 	private void wartimeDeathPoints(Player attackerPlayer, Player defenderPlayer, Resident attackerResident, Resident defenderResident) {
 

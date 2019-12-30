@@ -6,6 +6,7 @@ import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
+import com.palmergames.bukkit.towny.object.TownyObject;
 import com.palmergames.bukkit.towny.permissions.PermissionNodes;
 import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
 import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
@@ -40,6 +41,31 @@ public class SiegeWarDeathController {
 	 */
 	public static void evaluateSiegePvPDeath(Player deadPlayer, Player killerPlayer, Resident deadResident, Resident killerResident)  {
 		
+		/*
+		
+		TESTING
+Siege attack - Ally of attacker gains timed points PASS
+Siege defence - Ally of defender gains timed points PASS
+
+Defending guard killed by attacking soldier
+defending soldier killed by attacking soldier
+attacking soldier killed by defending guard
+attacking soldier killed by defending soldier
+
+defending guard killed by attacking ally soldier
+defending soldier killed by attacking ally soldier
+attacking soldier killed by defending ally soldier
+
+??????
+defending ally soldier killed by attacking soldier
+attacking ally soldier killed by defending soldier
+attacking ally soldier killed by defending guard
+
+Exploration testing....
+
+		
+		 */
+		System.out.println("Now evaluating pvp death");
 		try {
 			if (!deadResident.hasTown())
 				return;
@@ -51,107 +77,199 @@ public class SiegeWarDeathController {
 			Town killerResidentTown = killerResident.getTown();
 
 			//Residents of occupied towns cannot affect siege points.
-			if(deadResidentTown.isOccupied() || killerResidentTown.isOccupied())
+			if (deadResidentTown.isOccupied() || killerResidentTown.isOccupied())
 				return;
 
-			//Was the dead player a resident of a besieged town, killed by a siege attacker, in the siege death point zone ?
-			TownyUniverse universe = TownyUniverse.getInstance();
-			if (deadResidentTown.hasSiege()
-				&& killerResidentTown.hasNation()
-				&& deadResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
-				&& deadResidentTown.getSiege().getSiegeZones().containsKey(killerResidentTown.getNation())
-				&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode())) {
+			SiegeZone siegeZone;
+			
+			if ((siegeZone = getSiegeZoneForDefendingGuardKilledByAttackingSoldier(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 
-				if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode()))
-					return;
+			} else if ((siegeZone = getSiegeZoneForDefendingSoldierKilledByAttackingSoldier(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 
-				SiegeZone siegeZone = deadResidentTown.getSiege().getSiegeZones().get(killerResidentTown.getNation());
+			} else if ((siegeZone = getSiegeZoneForAttackingSoldierKilledByDefendingGuard(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 
-				//Did the death occur in the siege death point zone?
-				if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-					SiegeWarPointsUtil.awardSiegePenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
-					return;
-				}
+			} else if ((siegeZone = getSiegeZoneForAttackingSoldierKilledByDefendingSoldier(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 
-			} else if (deadResidentTown.hasNation()
-				&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+			//Allies
+			} else if ((siegeZone = getSiegeZoneForDefendingGuardKilledByAttackingAllySoldier(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 
-				//Was the dead player a member of a besieging nation, killed by a siege defender, in the siege death point zone ?
-				Nation deadResidentNation = deadResidentTown.getNation();
-				if (killerResidentTown.hasSiege()
-					&& killerResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
-					&& killerResidentTown.getSiege().getSiegeZones().containsKey(deadResidentNation)) {
+			} else if ((siegeZone = getSiegeZoneForDefendingSoldierKilledByAttackingAllySoldier(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 
-					if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode()))
-						return;
-
-					SiegeZone siegeZone = killerResidentTown.getSiege().getSiegeZones().get(deadResidentNation);
-
-					//Did the death occur in the siege death point zone?
-					if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-						SiegeWarPointsUtil.awardSiegePenaltyPoints(true, siegeZone.getDefendingTown(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
-						return;
-					}
-
-				//Was the dead player a member of a nation under attack, killed by a siege attacker, in the death points zone ?
-				} else if (killerResidentTown.hasNation()) {
-					for (SiegeZone siegeZone : killerResidentTown.getNation().getSiegeZones()) {
-						if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
-							&& siegeZone.getDefendingTown().hasNation()
-							&& siegeZone.getDefendingTown().getNation() == deadResidentNation) {
-
-							if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode()))
-								return;
-
-							//Did the death occur in the siege death point zone?
-							if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-								SiegeWarPointsUtil.awardSiegePenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
-								return;
-							}
-						}
-					}
-
-
-				//Was the dead player an ally of the attacking nation, killed by a siege defender ?
-				} else if (killerResidentTown.hasSiege()
-					&& killerResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS) {
-
-					if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode()))
-						return;
-
-					for(SiegeZone siegeZone: killerResidentTown.getSiege().getSiegeZones().values()) {
-						if(siegeZone.getAttackingNation().getAllies().contains(deadResidentNation)
-							&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-
-							SiegeWarPointsUtil.awardSiegePenaltyPoints(true, siegeZone.getDefendingTown(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
-							return;
-						}
-					}
-
-				//Was the dead player an ally of the defending nation, killed by a siege attacker ?
-				} else if (killerResidentTown.hasNation()) {
-					for (SiegeZone siegeZone : killerResidentTown.getNation().getSiegeZones()) {
-						if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
-							&& siegeZone.getDefendingTown().hasNation()
-							&& siegeZone.getDefendingTown().getNation() == deadResidentNation
-							&& siegeZone.getDefendingTown().getNation().getAllies().contains(deadResidentNation)) {
-
-							if (!universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode()))
-								return;
-
-							//Did the death occur in the siege death point zone?
-							if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
-								SiegeWarPointsUtil.awardSiegePenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
-								return;
-							}
-						}
-					}
-				}
+			} else if ((siegeZone = getSiegeZoneForAttackingSoldierKilledByDefendingAllySoldier(deadPlayer, killerPlayer, deadResidentTown, killerResidentTown)) != null) {
+				awardSiegePvpPenaltyPoints(false, siegeZone.getAttackingNation(), deadResident, siegeZone);
 			}
+
 		} catch (NotRegisteredException e) {
 			e.printStackTrace();
 			System.out.println("Error evaluating siege pvp death");
 		}
+		
+				 
+	}
+
+	private static SiegeZone getSiegeZoneForDefendingGuardKilledByAttackingSoldier(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException 
+	{
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (deadResidentTown.hasSiege()
+			&& killerResidentTown.hasNation()
+			&& deadResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+			&& deadResidentTown.getSiege().getSiegeZones().containsKey(killerResidentTown.getNation())
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+
+			SiegeZone siegeZone = deadResidentTown.getSiege().getSiegeZones().get(killerResidentTown.getNation());
+
+			if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+				return siegeZone;
+			}
+		}
+		return null;
 	}
 	
+	private static SiegeZone getSiegeZoneForDefendingGuardKilledByAttackingAllySoldier(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException
+	{
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (deadResidentTown.hasSiege()
+			&& killerResidentTown.hasNation()
+			&& deadResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+
+			for (SiegeZone siegeZone : deadResidentTown.getSiege().getSiegeZones().values()) {
+				if (siegeZone.getAttackingNation().getAllies().contains(killerResidentTown.getNation())
+					&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+					
+					return siegeZone;
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static SiegeZone getSiegeZoneForDefendingSoldierKilledByAttackingSoldier(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException 
+	{
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (killerResidentTown.hasNation()
+			&& deadResidentTown.hasNation()
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+
+			for (SiegeZone siegeZone : killerResidentTown.getNation().getSiegeZones()) {
+				if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+					&& siegeZone.getDefendingTown().hasNation()
+					&& siegeZone.getDefendingTown().getNation() == deadResidentTown.getNation()
+					&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+
+					return siegeZone;
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static SiegeZone getSiegeZoneForAttackingSoldierKilledByDefendingGuard(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException
+	{
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (deadResidentTown.hasNation()
+			&& killerResidentTown.hasSiege()
+			&& killerResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+			&& deadResidentTown.getSiege().getSiegeZones().containsKey(killerResidentTown.getNation())
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_TOWN_POINTS.getNode())) {
+			
+			SiegeZone siegeZone = deadResidentTown.getSiege().getSiegeZones().get(killerResidentTown.getNation());
+
+			if (deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+				return siegeZone;
+			}
+		}
+		return null;
+	}
+
+	private static SiegeZone getSiegeZoneForAttackingSoldierKilledByDefendingSoldier(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException
+	{
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (killerResidentTown.hasNation()
+			&& deadResidentTown.hasNation()
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+
+			for (SiegeZone siegeZone : deadResidentTown.getNation().getSiegeZones()) {
+				if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+					&& siegeZone.getDefendingTown().hasNation()
+					&& siegeZone.getDefendingTown().getNation() == killerResidentTown.getNation()
+					&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+
+					return siegeZone;
+				}
+			}
+		}
+		return null;
+	}
+
+	private static SiegeZone getSiegeZoneForDefendingSoldierKilledByAttackingAllySoldier(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException {
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (killerResidentTown.hasNation()
+			&& deadResidentTown.hasNation()
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+
+			for (SiegeZone siegeZone : killerResidentTown.getNation().getSiegeZones()) {
+				if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+					&& siegeZone.getDefendingTown().hasNation()
+					&& deadResidentTown.getNation().getAllies().contains(siegeZone.getDefendingTown().getNation())
+					&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+
+					return siegeZone;
+				}
+			}
+		}
+		return null;
+	}
+
+	private static SiegeZone getSiegeZoneForAttackingSoldierKilledByDefendingAllySoldier(
+		Player deadPlayer, Player killerPlayer, Town deadResidentTown, Town killerResidentTown) throws NotRegisteredException
+	{
+		TownyUniverse universe = TownyUniverse.getInstance();
+		if (killerResidentTown.hasNation()
+			&& deadResidentTown.hasNation()
+			&& universe.getPermissionSource().testPermission(deadPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())
+			&& universe.getPermissionSource().testPermission(killerPlayer, PermissionNodes.TOWNY_NATION_SIEGE_POINTS.getNode())) {
+
+			for (SiegeZone siegeZone : deadResidentTown.getNation().getSiegeZones()) {
+				if (siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+					&& siegeZone.getDefendingTown().hasNation()
+					&& killerResidentTown.getNation().getAllies().contains(siegeZone.getDefendingTown().getNation())
+					&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+
+					return siegeZone;
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static void awardSiegePvpPenaltyPoints(boolean attackerDeath,
+											   TownyObject pointsRecipient,
+											   Resident deadResident,
+											   SiegeZone siegeZone) throws NotRegisteredException {
+		SiegeWarPointsUtil.awardSiegePenaltyPoints(
+			attackerDeath,
+			pointsRecipient, 
+			deadResident, 
+			siegeZone, 
+			TownySettings.getLangString("msg_siege_war_participant_death"));
+	}
 }
