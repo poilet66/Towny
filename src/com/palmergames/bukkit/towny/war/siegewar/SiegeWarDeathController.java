@@ -111,6 +111,7 @@ public class SiegeWarDeathController {
 						}
 					}
 
+
 				//Was the dead player an ally of the attacking nation, killed by a siege defender ?
 				} else if (killerResidentTown.hasSiege()
 					&& killerResidentTown.getSiege().getStatus() == SiegeStatus.IN_PROGRESS) {
@@ -120,7 +121,7 @@ public class SiegeWarDeathController {
 
 					for(SiegeZone siegeZone: killerResidentTown.getSiege().getSiegeZones().values()) {
 						if(siegeZone.getAttackingNation().getAllies().contains(deadResidentNation)
-  							&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
+							&& deadPlayer.getLocation().distance(siegeZone.getFlagLocation()) < TownySettings.getWarSiegeZoneDeathRadiusBlocks()) {
 
 							SiegeWarPointsUtil.awardSiegePenaltyPoints(true, siegeZone.getDefendingTown(), deadResident, siegeZone, TownySettings.getLangString("msg_siege_war_participant_death"));
 							return;
