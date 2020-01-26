@@ -94,7 +94,7 @@ public class AttackTown {
 			}
             
             //Setup attack
-            attackTown(player, block, nationOfAttackingPlayer, defendingTown);
+            attackTown(block, nationOfAttackingPlayer, defendingTown);
         } catch (TownyException x) {
             TownyMessaging.sendErrorMsg(player, x.getMessage());
 			event.setBuild(false);
@@ -107,11 +107,7 @@ public class AttackTown {
     }
 
 
-    private static void attackTown(Player player,
-								  Block block,
-                                  Nation attackingNation,
-                                    Town defendingTown) throws TownyException {
-
+    private static void attackTown(Block block, Nation attackingNation, Town defendingTown) throws TownyException {
 		Siege siege;
 		SiegeZone siegeZone;
 		boolean newSiege;
@@ -149,6 +145,7 @@ public class AttackTown {
 				defendingTown.getName()));
 		
 		siegeZone.setFlagLocation(block.getLocation());
+		siegeZone.setWarChestAmount(defendingTown.getSiegeCost());
 		siege.getSiegeZones().put(attackingNation, siegeZone);
 		attackingNation.addSiegeZone(siegeZone);
 
@@ -185,11 +182,12 @@ public class AttackTown {
 		if (TownySettings.isUsingEconomy()) {
 			String moneyMessage = 
 				String.format(
-				TownySettings.getLangString("msg_siege_war_attack_money"),
-					TownyEconomyHandler.getFormattedBalance(defendingTown.getSiegeCost()),
-					TownyEconomyHandler.getFormattedBalance(defendingTown.getPlunderValue()));
+				TownySettings.getLangString("msg_siege_war_attack_pay_war_chest"),
+					TownyFormatter.getFormattedNationName(attackingNation),
+					TownyEconomyHandler.getFormattedBalance(defendingTown.getSiegeCost()));
 			
-			TownyMessaging.sendMessage(player, moneyMessage);
+			TownyMessaging.sendPrefixedNationMessage(attackingNation, moneyMessage);
+			TownyMessaging.sendPrefixedTownMessage(defendingTown, moneyMessage);
 		}
     }
 
