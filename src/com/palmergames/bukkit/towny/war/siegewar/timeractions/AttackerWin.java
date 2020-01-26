@@ -44,7 +44,7 @@ public class AttackerWin {
 							TownySettings.getLangString("msg_siege_war_attack_recover_war_chest"),
 							TownyFormatter.getFormattedNationName(winnerNation),
 							TownyEconomyHandler.getFormattedBalance(siegeZone.getWarChestAmount()));
-					
+
 					//Send message to nation(s)
 					TownyMessaging.sendPrefixedNationMessage(winnerNation, message);
 					if(winnerNation != siegeZone.getAttackingNation())

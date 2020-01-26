@@ -66,22 +66,11 @@ public class AttackTown {
             if (nationOfAttackingPlayer.isNationAttackingTown(defendingTown))
                 throw new TownyException(TownySettings.getLangString("msg_err_siege_war_nation_already_attacking_town"));
 
-            if (defendingTown.isSiegeImmunityActive()) {
+            if (defendingTown.isSiegeImmunityActive())
                 throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_attack_siege_immunity"));
-            }
 
-            if (TownySettings.isUsingEconomy()) {
-                double initialSiegeCost =
-                        TownySettings.getWarSiegeAttackerCostUpFrontPerPlot()
-                                * defendingTown.getTownBlocks().size();
-
-                if (nationOfAttackingPlayer.canPayFromHoldings(initialSiegeCost))
-                    //Deduct upfront cost
-                    nationOfAttackingPlayer.pay(initialSiegeCost, "Cost of Initiating an assault siege.");
-                else {
-                    throw new TownyException(TownySettings.getLangString("msg_err_no_money"));
-                }
-            }
+            if (TownySettings.isUsingEconomy() && !nationOfAttackingPlayer.canPayFromHoldings(defendingTown.getSiegeCost()))
+				throw new TownyException(TownySettings.getLangString("msg_err_no_money"));
 
             if (SiegeWarBlockUtil.doesBlockHaveANonAirBlockAboveIt(block))
                 throw new TownyException(TownySettings.getLangString("msg_err_siege_war_banner_must_be_placed_above_ground"));
@@ -180,14 +169,22 @@ public class AttackTown {
 		}
 
 		if (TownySettings.isUsingEconomy()) {
-			String moneyMessage = 
-				String.format(
-				TownySettings.getLangString("msg_siege_war_attack_pay_war_chest"),
-					TownyFormatter.getFormattedNationName(attackingNation),
-					TownyEconomyHandler.getFormattedBalance(defendingTown.getSiegeCost()));
-			
-			TownyMessaging.sendPrefixedNationMessage(attackingNation, moneyMessage);
-			TownyMessaging.sendPrefixedTownMessage(defendingTown, moneyMessage);
+			try {
+				//Pay upfront cost into warchest now
+				attackingNation.pay(siegeZone.getWarChestAmount(), "Cost of starting a siege.");
+
+				String moneyMessage =
+					String.format(
+						TownySettings.getLangString("msg_siege_war_attack_pay_war_chest"),
+						TownyFormatter.getFormattedNationName(attackingNation),
+						TownyEconomyHandler.getFormattedBalance(siegeZone.getWarChestAmount()));
+
+				TownyMessaging.sendPrefixedNationMessage(attackingNation, moneyMessage);
+				TownyMessaging.sendPrefixedTownMessage(defendingTown, moneyMessage);
+			} catch (EconomyException e) {
+				System.out.println("Problem paying into war chest");
+				e.printStackTrace();
+			}
 		}
     }
 
