@@ -50,21 +50,31 @@ public class SiegeWarMoneyUtil {
 	 * @param winnerTown the winning town
 	 */
 	public static void giveWarChestsToWinnerTown(Siege siege, Town winnerTown) {
+		for (SiegeZone siegeZone : siege.getSiegeZones().values()) {
+			giveOneWarChestToWinnerTown(siegeZone, winnerTown);
+		}
+	}
+	
+	/**
+	 * This method gives one war chest to the winnner town
+	 *
+	 * @param siegeZone the siege zone
+	 * @param winnerTown the winning town
+	 */
+	public static void giveOneWarChestToWinnerTown(SiegeZone siegeZone, Town winnerTown) {
 		if(TownySettings.isUsingEconomy()) {
 			try {
-				for (SiegeZone siegeZone : siege.getSiegeZones().values()) {
-					winnerTown.collect(siegeZone.getWarChestAmount(), "War Chest Captured");
-					String message =
-						String.format(
-							TownySettings.getLangString("msg_siege_war_attack_recover_war_chest"),
-							TownyFormatter.getFormattedTownName(winnerTown),
-							TownyEconomyHandler.getFormattedBalance(siegeZone.getWarChestAmount()));
+				winnerTown.collect(siegeZone.getWarChestAmount(), "War Chest Captured");
+				String message =
+					String.format(
+						TownySettings.getLangString("msg_siege_war_attack_recover_war_chest"),
+						TownyFormatter.getFormattedTownName(winnerTown),
+						TownyEconomyHandler.getFormattedBalance(siegeZone.getWarChestAmount()));
 
-					//Send message to nation
-					TownyMessaging.sendPrefixedNationMessage(siegeZone.getAttackingNation(), message);
-					//Send message to town
-					TownyMessaging.sendPrefixedTownMessage(siege.getDefendingTown(), message);
-				}
+				//Send message to nation
+				TownyMessaging.sendPrefixedNationMessage(siegeZone.getAttackingNation(), message);
+				//Send message to town
+				TownyMessaging.sendPrefixedTownMessage(winnerTown, message);
 			} catch (EconomyException e) {
 				System.out.println("Problem paying war chest(s) to winner town");
 				e.printStackTrace();

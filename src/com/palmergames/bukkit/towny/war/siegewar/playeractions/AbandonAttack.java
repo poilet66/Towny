@@ -95,6 +95,6 @@ public class AbandonAttack {
 					TownyFormatter.getFormattedTownName(siegeZone.getDefendingTown())));
 		}
 
-		SiegeWarMoneyUtil.giveWarChestsToWinnerTown(siegeZone.getSiege(), siegeZone.getDefendingTown());
+		SiegeWarMoneyUtil.giveOneWarChestToWinnerTown(siegeZone, siegeZone.getDefendingTown());
     }
 }
