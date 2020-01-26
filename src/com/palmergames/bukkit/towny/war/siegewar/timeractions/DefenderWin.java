@@ -7,6 +7,7 @@ import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.exceptions.EconomyException;
 import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarMoneyUtil;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarSiegeCompletionUtil;
 import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
 import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
@@ -32,27 +33,7 @@ public class DefenderWin
 			TownySettings.getLangString("msg_siege_war_defender_win"),
 			TownyFormatter.getFormattedTownName(winnerTown)));
 
-		//The town receives all the warchests
-		if(TownySettings.isUsingEconomy()) {
-			try {
-				for (SiegeZone siegeZone : siege.getSiegeZones().values()) {
-					winnerTown.collect(siegeZone.getWarChestAmount(), "War Chest Captured");
-					String message =
-						String.format(
-							TownySettings.getLangString("msg_siege_war_attack_recover_war_chest"),
-							TownyFormatter.getFormattedTownName(winnerTown),
-							TownyEconomyHandler.getFormattedBalance(siegeZone.getWarChestAmount()));
-
-					//Send message to nation
-					TownyMessaging.sendPrefixedNationMessage(siegeZone.getAttackingNation(), message);
-					//Send message to town
-					TownyMessaging.sendPrefixedTownMessage(siege.getDefendingTown(), message);
-				}
-			} catch (EconomyException e) {
-				System.out.println("Problem paying war chest(s) to winner town");
-				e.printStackTrace();
-			}
-		}
+		SiegeWarMoneyUtil.giveWarChestsToWinnerTown(siege, winnerTown);
     }
 
 }
