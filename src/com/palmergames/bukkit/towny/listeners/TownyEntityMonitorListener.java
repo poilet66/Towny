@@ -19,6 +19,7 @@ import com.palmergames.bukkit.towny.permissions.PermissionNodes;
 import com.palmergames.bukkit.towny.utils.CombatUtil;
 import com.palmergames.bukkit.towny.war.eventwar.War;
 import com.palmergames.bukkit.towny.war.eventwar.WarSpoils;
+import com.palmergames.bukkit.towny.war.siegewar.SiegeWarDeathController;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -93,6 +94,11 @@ public class TownyEntityMonitorListener implements Listener {
 						attackerResident = townyUniverse.getDataSource().getResident(attackerPlayer.getName());
 					} catch (NotRegisteredException e) {
 					}
+				}
+
+				//Evaluate siege related aspects of kill
+				if(TownySettings.getWarSiegeEnabled() && attackerResident != null && defenderResident != null) {
+					SiegeWarDeathController.evaluateSiegePvPDeath(defenderPlayer, attackerPlayer, defenderResident, attackerResident);
 				}
 
 				/*

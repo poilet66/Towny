@@ -274,6 +274,17 @@ permissions:
             towny.command.nation.toggle.public: true
             towny.command.nation.toggle.open: true
 
+    towny.nation.siege.*:
+        description: User can access all aspects of nation sieges.
+        default: false
+        children:
+            towny.nation.siege.points: true
+            towny.nation.siege.attack: true
+            towny.nation.siege.abandon: true
+            towny.nation.siege.invade: true
+            towny.nation.siege.plunder: true
+
+
     # Town command permissions
     towny.command.town.*:
         description: User can access all town related commands.
@@ -401,6 +412,13 @@ permissions:
         children:
             towny.command.town.unclaim: true
             towny.command.town.unclaim.all: true
+
+    towny.town.siege.*:
+        description: User can access all aspects of town sieges.
+        default: false
+        children:
+            towny.town.siege.points: true
+            towny.town.siege.surrender: true
 
       # Plot command permissions
     towny.command.plot.*:

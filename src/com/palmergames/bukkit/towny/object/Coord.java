@@ -1,6 +1,7 @@
 package com.palmergames.bukkit.towny.object;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 
@@ -135,5 +136,17 @@ public class Coord {
 	public static int getCellSize() {
 
 		return cellSize;
+	}
+
+	/**
+	 * Get the Location object representing the "top north west corner" of this co-ord
+	 * 
+	 * @param world the world
+	 * @return the corner location
+	 */
+	public Location getTopNorthWestCornerLocation(World world) {
+		int locX = this.x * getCellSize();
+		int locZ = this.z * getCellSize();
+		return new Location(world, locX, 255, locZ);
 	}
 }

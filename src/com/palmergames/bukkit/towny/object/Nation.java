@@ -19,6 +19,9 @@ import com.palmergames.bukkit.towny.invites.exceptions.TooManyInvitesException;
 import com.palmergames.bukkit.towny.object.metadata.CustomDataField;
 import com.palmergames.bukkit.towny.permissions.TownyPerms;
 import com.palmergames.bukkit.towny.war.flagwar.TownyWar;
+import com.palmergames.bukkit.towny.war.siegewar.SiegeWarMembershipController;
+import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
+import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.util.StringMgmt;
 import org.bukkit.Bukkit;
@@ -39,6 +42,7 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 	private List<Town> towns = new ArrayList<>();
 	private List<Nation> allies = new ArrayList<>();
 	private List<Nation> enemies = new ArrayList<>();
+	private List<SiegeZone> siegeZones = new ArrayList<>();
 	private Town capital;
 	private double taxes, spawnCost;
 	private boolean neutral = false;
@@ -86,6 +90,11 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 				removeEnemy(nation);
 			} catch (NotRegisteredException e) {
 			}
+
+			if(TownySettings.getWarSiegeEnabled() && nation.hasAlly(this)) {
+				SiegeWarMembershipController.evaluateNationsFormNewAlliance(this, nation);
+			}
+
 			getAllies().add(nation);
 		}
 	}
@@ -94,8 +103,12 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 
 		if (!hasAlly(nation))
 			throw new NotRegisteredException();
-		else
+		else {
+			if(TownySettings.getWarSiegeEnabled())
+				SiegeWarMembershipController.evaluateNationRemoveAlly(this, nation);
+
 			return getAllies().remove(nation);
+		}
 	}
 
 	public boolean removeAllAllies() {
@@ -112,6 +125,10 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 	public boolean hasAlly(Nation nation) {
 
 		return getAllies().contains(nation);
+	}
+
+	public boolean hasMutualAlly(Nation nation) {
+		return (getAllies().contains(nation) && nation.getAllies().contains(this));
 	}
 
 	public boolean IsAlliedWith(Nation nation) {
@@ -337,6 +354,16 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 		return allies;
 	}
 
+	public List<Nation> getMutualAllies() {
+		List<Nation> result = new ArrayList<>();
+		for(Nation ally: getAllies()) {
+			if(ally.hasAlly(this))
+				result.add(ally);
+		}
+		return result;
+	}
+
+
 	public int getNumTowns() {
 
 		return towns.size();
@@ -357,6 +384,10 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 		else {
 
 			boolean isCapital = town.isCapital();
+
+			if(TownySettings.getWarSiegeEnabled())
+				SiegeWarMembershipController.evaluateNationRemoveTown(town);
+
 			remove(town);
 
 			if (getNumTowns() == 0) {
@@ -385,7 +416,10 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 			town.setNation(null);
 		} catch (AlreadyRegisteredException ignored) {
 		}
-		
+
+		//Reset occupation to false
+		town.setOccupied(false);
+
 		/*
 		 * Remove all resident titles/nationRanks before saving the town itself.
 		 */
@@ -405,10 +439,20 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 		BukkitTools.getPluginManager().callEvent(new NationRemoveTownEvent(town, this));
 	}
 
+	public void removeSiegeZone(SiegeZone siegeZone) {
+		siegeZones.remove(siegeZone);
+	}
+
 	private void removeAllTowns() {
 
 		for (Town town : new ArrayList<>(towns))
 			remove(town);
+	}
+
+	private void removeAllSiegeZones() {
+
+		for (SiegeZone siegeZone : new ArrayList<>(siegeZones))
+			siegeZones.remove(siegeZone);
 	}
 
 	public void setTaxes(double taxes) {
@@ -431,6 +475,7 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 		removeAllAllies();
 		removeAllEnemies();
 		removeAllTowns();
+		removeAllSiegeZones();
 		capital = null;
 	}
 
@@ -688,7 +733,67 @@ public class Nation extends TownyObject implements ResidentList, TownyInviter, T
 
 		return spawnCost;
 	}
-	
+
+	public void addSiegeZone(SiegeZone siegeFront) {
+		siegeZones.add(siegeFront);
+	}
+
+	public List<Town> getTownsUnderSiegeAttack() {
+		List<Town> result = new ArrayList<>();
+		for(SiegeZone siegeFront: siegeZones) {
+			result.add(siegeFront.getSiege().getDefendingTown());
+		}
+		return result;
+	}
+
+	//Note - Do not return a town if our nation just invaded it
+	public List<Town> getTownsUnderSiegeDefence() {
+		List<Town> result = new ArrayList<Town>();
+		for(Town town: towns) {
+			if(town.hasSiege() && town.getSiege().getAttackerWinner() != this) {
+				result.add(town);
+			}
+		}
+		return result;
+	}
+
+	public List<Town> getTownsUnderActiveSiegeDefence() {
+		List<Town> result = new ArrayList<Town>();
+		for(Town town: towns) {
+			if(town.hasSiege() && town.getSiege().getStatus() == SiegeStatus.IN_PROGRESS) {
+				result.add(town);
+			}
+		}
+		return result;
+	}
+
+	public int getNumActiveSiegeAttacks() {
+		int result = 0;
+		for(SiegeZone siegeZone: siegeZones) {
+			if(siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS) 
+				result++;
+		}
+		return result;
+	}
+
+	public boolean isNationAttackingTown(Town town) {
+		return town.hasSiege()
+				&& town.getSiege().getStatus() == SiegeStatus.IN_PROGRESS
+				&& town.getSiege().getSiegeZones().containsKey(this);
+	}
+
+	public List<SiegeZone> getSiegeZones() {
+		return siegeZones;
+	}
+
+	public List<String> getSiegeZoneNames() {
+		List<String> names = new ArrayList<>();
+		for(SiegeZone siegeZone: siegeZones) {
+			names.add(siegeZone.getName());
+		}
+		return names;
+	}
+
 	public int getNumTownblocks() {
 		int townBlocksClaimed = 0;
 		for (Town towns : this.getTowns()) {

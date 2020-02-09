@@ -36,6 +36,7 @@ import com.palmergames.bukkit.towny.tasks.TownClaim;
 import com.palmergames.bukkit.towny.utils.AreaSelectionUtil;
 import com.palmergames.bukkit.towny.utils.ResidentUtil;
 import com.palmergames.bukkit.towny.utils.SpawnUtil;
+import com.palmergames.bukkit.towny.war.siegewar.timeractions.RemoveRuinedTowns;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.Colors;
@@ -92,6 +93,7 @@ public class TownyAdminCommand extends BaseCommand implements CommandExecutor {
 		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "checkperm {name} {node}", ""));
 		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "reload", TownySettings.getLangString("admin_panel_2")));
 		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "reset", ""));
+		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "removeruins", ""));
 		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "backup", ""));
 		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "mysqldump", ""));
 		ta_help.add(ChatTools.formatCommand("", "/townyadmin", "database [save/load]", ""));
@@ -202,6 +204,10 @@ public class TownyAdminCommand extends BaseCommand implements CommandExecutor {
 			} else if (split[0].equalsIgnoreCase("reset")) {
 
 				reloadTowny(true);
+
+			} else if (split[0].equalsIgnoreCase("removeruins")) {
+
+				RemoveRuinedTowns.removeRuinedTowns(true);
 
 			} else if (split[0].equalsIgnoreCase("backup")) {
 
@@ -608,7 +614,7 @@ public class TownyAdminCommand extends BaseCommand implements CommandExecutor {
 				if (!isConsole) {
 					TownyMessaging.sendMessage(sender, String.format(TownySettings.getLangString("town_deleted_by_admin"), town.getName()));
 					TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_del_town"), town.getName()));
-					townyUniverse.getDataSource().removeTown(town);
+					townyUniverse.getDataSource().removeTown(town, false);
 				} else { //isConsole
 					ConfirmationHandler.addConfirmation(ConfirmationType.TOWN_DELETE, town); // It takes the senders town & nation, an admin deleting another town has no confirmation.
 					TownyMessaging.sendConfirmationMessage(Bukkit.getConsoleSender(), null, null, null, null);					
