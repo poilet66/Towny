@@ -7,6 +7,7 @@ import com.palmergames.bukkit.towny.tasks.HealthRegenTimerTask;
 import com.palmergames.bukkit.towny.tasks.MobRemovalTimerTask;
 import com.palmergames.bukkit.towny.tasks.RepeatingTimerTask;
 import com.palmergames.bukkit.towny.tasks.TeleportWarmupTimerTask;
+import com.palmergames.bukkit.towny.war.siegewar.SiegeWarTimerTask;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.util.TimeMgmt;
 import com.palmergames.util.TimeTools;
@@ -32,6 +33,7 @@ public class TownyTimerHandler{
 	
 	private static int townyRepeatingTask = -1;
 	private static int dailyTask = -1;
+	private static int siegeWarTask = -1;
 	private static int mobRemoveTask = -1;
 	private static int healthRegenTask = -1;
 	private static int teleportWarmupTask = -1;
@@ -92,6 +94,26 @@ public class TownyTimerHandler{
 		} else if (!on && isDailyTimerRunning()) {
 			BukkitTools.getScheduler().cancelTask(dailyTask);
 			dailyTask = -1;
+		}
+	}
+
+	public static void toggleSiegeWarTimer(boolean on) {
+
+		if(!TownySettings.getWarSiegeEnabled()) {
+			return;
+		}
+
+		if (on && !isSiegeWarTimerRunning()) {
+			//Note this small delay is a safeguard against race conditions
+			long delayTicks = TimeTools.convertToTicks(60);
+			siegeWarTask = BukkitTools.scheduleAsyncRepeatingTask(new SiegeWarTimerTask(plugin), delayTicks, TimeTools.convertToTicks(TownySettings.getWarSiegeTimerIntervalSeconds()));
+
+			if (siegeWarTask == -1)
+				TownyMessaging.sendErrorMsg("Could not schedule siege war timer.");
+
+		} else if (!on && isDailyTimerRunning()) {
+			BukkitTools.getScheduler().cancelTask(siegeWarTask);
+			siegeWarTask = -1;
 		}
 	}
 
@@ -156,6 +178,11 @@ public class TownyTimerHandler{
 	public static boolean isDailyTimerRunning() {
 
 		return dailyTask != -1;
+	}
+
+	public static boolean isSiegeWarTimerRunning() {
+
+		return siegeWarTask != -1;
 	}
 
 	public static boolean isHealthRegenRunning() {

@@ -50,15 +50,20 @@ import com.palmergames.bukkit.towny.tasks.CooldownTimerTask;
 import com.palmergames.bukkit.towny.tasks.CooldownTimerTask.CooldownType;
 import com.palmergames.bukkit.towny.tasks.TownClaim;
 import com.palmergames.bukkit.towny.utils.AreaSelectionUtil;
+import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
 import com.palmergames.bukkit.towny.utils.OutpostUtil;
 import com.palmergames.bukkit.towny.utils.ResidentUtil;
 import com.palmergames.bukkit.towny.utils.SpawnUtil;
 import com.palmergames.bukkit.towny.war.flagwar.TownyWar;
+import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
+import com.palmergames.bukkit.towny.war.siegewar.timeractions.UpdateTownNeutralityCounters;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarRuinsUtil;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.Colors;
 import com.palmergames.bukkit.util.NameValidation;
 import com.palmergames.util.StringMgmt;
+import com.palmergames.util.TimeMgmt;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -238,6 +243,10 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 
 			} else if (split[0].equalsIgnoreCase("withdraw")) {
 
+				if (SiegeWarRuinsUtil.isPlayerTownRuined(player)) {
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_use_command_because_town_ruined"));
+				}
+
 				if (!townyUniverse.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_COMMAND_TOWN_WITHDRAW.getNode()))
 					throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
 				
@@ -275,6 +284,10 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 					throw new TownyException(String.format(TownySettings.getLangString("msg_must_specify_amnt"), "/town withdraw"));
 
 			} else if (split[0].equalsIgnoreCase("deposit")) {
+
+				if (SiegeWarRuinsUtil.isPlayerTownRuined(player)) {
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_use_command_because_town_ruined"));
+				}
 
 				if (!townyUniverse.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_COMMAND_TOWN_DEPOSIT.getNode()))
 					throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
@@ -315,6 +328,10 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 					throw new TownyException(String.format(TownySettings.getLangString("msg_must_specify_amnt"), "/town deposit"));
 			} else if (split[0].equalsIgnoreCase("plots")) {
 
+				if (SiegeWarRuinsUtil.isPlayerTownRuined(player)) {
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_use_command_because_town_ruined"));
+				}
+
 				if (!townyUniverse.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_COMMAND_TOWN_PLOTS.getNode()))
 					throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
 
@@ -335,6 +352,10 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 				townPlots(player, town);
 
 			} else {
+				if (SiegeWarRuinsUtil.isPlayerTownRuined(player)) {
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_use_command_because_town_ruined"));
+				}
+
 				String[] newSplit = StringMgmt.remFirstArg(split);
 
 				if (split[0].equalsIgnoreCase("rank")) {
@@ -1169,6 +1190,7 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 			player.sendMessage(ChatTools.formatCommand("", "/town toggle", "taxpercent", ""));
 			player.sendMessage(ChatTools.formatCommand("", "/town toggle", "open", ""));
 			player.sendMessage(ChatTools.formatCommand("", "/town toggle", "jail [number] [resident]", ""));
+			player.sendMessage(ChatTools.formatCommand("", "/town toggle", "neutral", ""));
 		} else {
 			Resident resident;
 
@@ -1194,6 +1216,15 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 				TownyMessaging.sendPrefixedTownMessage(town, String.format(TownySettings.getLangString("msg_changed_public"), town.isPublic() ? TownySettings.getLangString("enabled") : TownySettings.getLangString("disabled")));
 
 			} else if (split[0].equalsIgnoreCase("pvp")) {
+
+				if(TownySettings.getWarSiegeEnabled()
+						&& TownySettings.getWarSiegePvpAlwaysOnInBesiegedTowns()
+						&& town.hasSiege()
+						&& (town.getSiege().getStatus() == SiegeStatus.IN_PROGRESS))
+				{
+					throw new TownyException("In besieged towns, PVP is automatically set to 'ON', and cannot be changed until the siege is over.");
+				}
+
 				// Make sure we are allowed to set these permissions.
 				toggleTest(player, town, StringMgmt.join(split, " "));
 				
@@ -1326,7 +1357,42 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 						return;
 					}
 				}
+				
+			} else if (split[0].equalsIgnoreCase("neutral")) {
 
+				if(!(TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegeTownNeutralityEnabled()))
+					throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
+
+				if (!townyUniverse.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_COMMAND_TOWN_TOGGLE.getNode(split[0].toLowerCase())))
+					throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
+
+				//Cannot change neutrality status while in a nation
+				if(town.hasNation())
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_change_neutrality_while_in_nation"));
+
+				if(admin) {
+					town.setNeutralityChangeConfirmationCounterDays(1);
+					UpdateTownNeutralityCounters.updateTownNeutralityCounter(town);
+				} else {
+					if (town.getNeutralityChangeConfirmationCounterDays() == 0) {
+						//Here, no countdown is in progress, and the town wishes to change neutrality status
+						town.setDesiredNeutralityValue(!town.isNeutral());
+						int counterValue = TownySettings.getWarSiegeTownNeutralityConfirmationRequirementDays();
+						town.setNeutralityChangeConfirmationCounterDays(counterValue);
+						//Send message to town
+						if (town.getDesiredNeutralityValue())
+							TownyMessaging.sendPrefixedTownMessage(town, String.format(TownySettings.getLangString("msg_siege_war_town_declared_neutral"), counterValue));
+						else
+							TownyMessaging.sendPrefixedTownMessage(town, String.format(TownySettings.getLangString("msg_siege_war_town_declared_non_neutral"), counterValue));
+
+					} else {
+						//Here, a countdown is in progress, and the town wishes to cancel the countdown,
+						town.setDesiredNeutralityValue(town.isNeutral());
+						town.setNeutralityChangeConfirmationCounterDays(0);
+						//Send message to town
+						TownyMessaging.sendPrefixedTownMessage(town, String.format(TownySettings.getLangString("msg_siege_war_town_neutrality_countdown_cancelled")));
+					}
+				}
 			} else {
 				throw new TownyException(String.format(TownySettings.getLangString("msg_err_invalid_property"), split[0]));
 			}
@@ -1883,7 +1949,6 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 						
 						if (TownyAPI.getInstance().isWarTime())
 							throw new TownyException(TownySettings.getLangString("msg_war_cannot_do"));
-
 						world = townyUniverse.getDataSource().getWorld(player.getWorld().getName());
 						if (world.getMinDistanceFromOtherTowns(coord, resident.getTown()) < TownySettings.getMinDistanceFromTownHomeblocks())
 							throw new TownyException(String.format(TownySettings.getLangString("msg_too_close2"), TownySettings.getLangString("homeblock")));
@@ -2236,7 +2301,6 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 			// TODO: Allow leaving town during war.
 			if (TownyAPI.getInstance().isWarTime())
 				throw new TownyException(TownySettings.getLangString("msg_war_cannot_do"));
-
 			resident = townyUniverse.getDataSource().getResident(player.getName());
 			town = resident.getTown();
 			
@@ -2361,7 +2425,17 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (split.length == 0) {
 			try {
 				Resident resident = townyUniverse.getDataSource().getResident(player.getName());
+
+				if(TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegeDelayFullTownRemoval()) {
+					long durationMillis = (long)(TownySettings.getWarSiegeRuinsRemovalDelayMinutes() * TimeMgmt.ONE_MINUTE_IN_MILLIS);
+					String durationFormatted = TimeMgmt.getFormattedTimeValue(durationMillis);
+					TownyMessaging.sendErrorMsg(player, String.format(
+						TownySettings.getLangString("msg_err_siege_war_delete_town_warning"),
+						durationFormatted));
+				}
+
 				ConfirmationHandler.addConfirmation(resident, ConfirmationType.TOWN_DELETE, null); // It takes the senders town & nation, an admin deleting another town has no confirmation.
+
 				TownyMessaging.sendConfirmationMessage(player, null, null, null, null);
 
 			} catch (TownyException x) {
@@ -2991,6 +3065,15 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 					throw new TownyException(TownySettings.getLangString("msg_war_cannot_do"));
 				}
 
+				if(TownySettings.getWarSiegeClaimingDisabledNearSiegeZones()) {
+					int claimDisableDistance = TownySettings.getWarSiegeClaimDisableDistanceBlocks();
+					for(SiegeZone siegeZone: townyUniverse.getDataSource().getSiegeZones()) {
+						if(siegeZone.getSiege().getStatus() == SiegeStatus.IN_PROGRESS && siegeZone.getFlagLocation().distance(player.getLocation()) < claimDisableDistance) {
+							throw new TownyException(TownySettings.getLangString("msg_err_siege_claim_too_near_siege_zone"));
+						}
+					}
+				}
+				
 				resident = townyUniverse.getDataSource().getResident(player.getName());
 				town = resident.getTown();
 				world = townyUniverse.getDataSource().getWorld(player.getWorld().getName());

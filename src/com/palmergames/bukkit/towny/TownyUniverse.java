@@ -19,6 +19,7 @@ import com.palmergames.bukkit.towny.permissions.TownyPermissionSource;
 import com.palmergames.bukkit.towny.permissions.TownyPerms;
 import com.palmergames.bukkit.towny.tasks.OnPlayerLogin;
 import com.palmergames.bukkit.towny.war.eventwar.War;
+import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.util.FileMgmt;
 import org.bukkit.Location;
@@ -49,6 +50,7 @@ public class TownyUniverse {
     private final ConcurrentHashMap<String, Resident> residents = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Town> towns = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Nation> nations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SiegeZone> siegeZones = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, TownyWorld> worlds = new ConcurrentHashMap<>();
     private final HashMap<String, CustomDataField> registeredMetadata = new HashMap<>();
     private final List<Resident> jailedResidents = new ArrayList<>();
@@ -255,6 +257,9 @@ public class TownyUniverse {
         return nations;
     }
     
+    public ConcurrentHashMap<String, SiegeZone> getSiegeZonesMap() {
+    	return siegeZones;
+	}
     public ConcurrentHashMap<String, Resident> getResidentMap() {
         return residents;
     }

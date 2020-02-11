@@ -85,7 +85,11 @@ public enum PermissionNodes {
 	TOWNY_COMMAND_TOWN_INVITE_ACCEPT("towny.command.town.invite.accept"),
 	TOWNY_COMMAND_TOWN_INVITE_DENY("towny.command.town.invite.deny"),
 
-
+	TOWNY_NATION_SIEGE_POINTS("towny.nation.siege.points"),
+	TOWNY_NATION_SIEGE_ATTACK("towny.nation.siege.attack"),
+	TOWNY_NATION_SIEGE_ABANDON("towny.nation.siege.abandon"),
+	TOWNY_NATION_SIEGE_INVADE("towny.nation.siege.invade"),
+	TOWNY_NATION_SIEGE_PLUNDER("towny.nation.siege.plunder"),
 	
 	/*
 	 * Town command permissions
@@ -142,6 +146,7 @@ public enum PermissionNodes {
 			TOWNY_COMMAND_TOWN_TOGGLE_TAXPERCENT("towny.command.town.toggle.taxpercent"),
 			TOWNY_COMMAND_TOWN_TOGGLE_OPEN("towny.command.town.toggle.open"),
 			TOWNY_COMMAND_TOWN_TOGGLE_JAIL("towny.command.town.toggle.jail"),
+			TOWNY_COMMAND_TOWN_TOGGLE_NEUTRAL("towny.command.town.toggle.neutral"),
 		
 		
 		TOWNY_COMMAND_TOWN_MAYOR("towny.command.town.mayor"),
@@ -161,6 +166,9 @@ public enum PermissionNodes {
 		TOWNY_COMMAND_TOWN_OUTLAW("towny.command.town.outlaw"),
 		TOWNY_COMMAND_TOWN_RESLIST("towny.command.town.reslist"),
 		TOWNY_COMMAND_TOWN_OUTLAWLIST("towny.command.town.outlawlist"),
+
+		TOWNY_TOWN_SIEGE_POINTS("towny.town.siege.points"),
+		TOWNY_TOWN_SIEGE_SURRENDER("towny.town.siege.surrender"),
 	
 	/*
 	 * Plot command permissions

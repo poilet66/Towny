@@ -17,8 +17,12 @@ import com.palmergames.bukkit.towny.invites.InviteHandler;
 import com.palmergames.bukkit.towny.invites.exceptions.TooManyInvitesException;
 import com.palmergames.bukkit.towny.object.metadata.CustomDataField;
 import com.palmergames.bukkit.towny.permissions.TownyPerms;
+import com.palmergames.bukkit.towny.war.siegewar.SiegeWarMembershipController;
+import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
+import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.util.StringMgmt;
+import com.palmergames.util.TimeMgmt;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -30,6 +34,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import static com.palmergames.util.TimeMgmt.ONE_HOUR_IN_MILLIS;
 
 public class Town extends TownyObject implements ResidentList, TownyInviter, ObjectGroupManageable<PlotObjectGroup>, EconomyHandler, TownBlockOwner {
 
@@ -71,10 +77,27 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 	private EconomyAccount account;
 	private List<TownBlock> townBlocks = new ArrayList<>();
 	private TownyPermission permissions = new TownyPermission();
-
+	private long recentlyRuinedEndTime;
+	private long revoltImmunityEndTime;
+	private long siegeImmunityEndTime;
+	private Siege siege;
+	private boolean occupied;
+	private boolean neutral;
+	private boolean desiredNeutralityValue;
+	private int neutralityChangeConfirmationCounterDays;
+	
 	public Town(String name) {
 		super(name);
 		permissions.loadDefault(this);
+		recentlyRuinedEndTime = 0;
+		revoltImmunityEndTime = 0;
+		siegeImmunityEndTime = System.currentTimeMillis()
+			+ (long)(TownySettings.getWarSiegeSiegeImmunityTimeNewTownsHours() * ONE_HOUR_IN_MILLIS);
+		siege = null;
+		occupied = false;
+		neutral = false;
+		desiredNeutralityValue = false;
+		neutralityChangeConfirmationCounterDays = 0;
 	}
 
 	@Override
@@ -305,7 +328,15 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 		// Admin has disabled PvP for this town.
 		if (isAdminDisabledPVP()) 
 			return false;
-		
+
+		if(TownySettings.getWarSiegeEnabled()
+			&& TownySettings.getWarSiegePvpAlwaysOnInBesiegedTowns()
+			&& !(TownySettings.getWarSiegeTownNeutralityEnabled() && isNeutral())
+			&& siege != null
+			&& siege.getStatus() == SiegeStatus.IN_PROGRESS) {
+			return true;
+		}
+
 		return this.permissions.pvp;
 	}
 	
@@ -607,6 +638,9 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 			throw new NotRegisteredException();
 		} else {
 
+			if(TownySettings.getWarSiegeEnabled())
+				SiegeWarMembershipController.evaluateTownRemoveResident(resident);
+
 			remove(resident);
 
 			if (getNumResidents() == 0) {
@@ -628,7 +662,6 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 		resident.updatePerms();
 
 		for (TownBlock townBlock : new ArrayList<>(resident.getTownBlocks())) {
-			
 			// Do not remove Embassy plots
 			if (townBlock.getType() != TownBlockType.EMBASSY) {
 				townBlock.setResident(null);
@@ -651,7 +684,7 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 					if ((assistant != resident) && (resident.hasTownRank("assistant"))) {
 						try {
 							setMayor(assistant);
-							continue;
+							break;
 						} catch (TownyException e) {
 							// Error setting mayor.
 							e.printStackTrace();
@@ -663,7 +696,7 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 						if (newMayor != resident) {
 							try {
 								setMayor(newMayor);
-								continue;
+								break;
 							} catch (TownyException e) {
 								// Error setting mayor.
 								e.printStackTrace();
@@ -749,7 +782,9 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 		homeBlock = null;
 		outpostSpawns.clear();
 		jailSpawns.clear();
-	
+		revoltImmunityEndTime = 0;
+		siegeImmunityEndTime = 0;
+
 //		try {                                               This section is being removed because the only method that calls town.clear() already does a check for the nation, 
 //			if (hasWorld()) {                               and later on also saves the world. Still not understood, is whether world.removeTownblocks would even remove townblocks
 //				world.removeTownBlocks(getTownBlocks());    which exist in other worlds beside the one in which the town spawn resides. Removed as of 0.94.0.5 by LlmDl.
@@ -1335,6 +1370,91 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 	public int getConqueredDays() {
 		return this.conqueredDays;
 	}
+
+	public Siege getSiege() {
+		return siege;
+	}
+
+	public void setSiege(Siege siege) {
+		this.siege = siege;
+	}
+
+	public boolean isSiegeImmunityActive() {
+		if(hasSiege() && siege.getStatus() == SiegeStatus.IN_PROGRESS)
+			return false; //Cooldown always off until the siege has finished
+
+		if(System.currentTimeMillis() < siegeImmunityEndTime) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public boolean isRevoltImmunityActive() {
+		return System.currentTimeMillis() < revoltImmunityEndTime;
+	}
+
+	public void setSiegeImmunityEndTime(long endTimeMillis) {
+		this.siegeImmunityEndTime = endTimeMillis;
+	}
+
+	public void setRevoltImmunityEndTime(long timeMillis) {
+		this.revoltImmunityEndTime = timeMillis;
+	}
+
+	public boolean hasSiege() {
+		return siege != null;
+	}
+
+	public long getSiegeImmunityEndTime() {
+		return siegeImmunityEndTime;
+	}
+
+	public long getRevoltImmunityEndTime() {
+		return revoltImmunityEndTime;
+	}
+
+	public String getFormattedHoursUntilRevoltCooldownEnds() {
+		double hoursRemainingMillis = revoltImmunityEndTime - System.currentTimeMillis();
+		return TimeMgmt.getFormattedTimeValue(hoursRemainingMillis);
+	}
+
+	public double getPlunderValue() {
+		return TownySettings.getWarSiegeAttackerPlunderAmountPerPlot() * townBlocks.size();
+	}
+
+	public double getSiegeCost() {
+		return TownySettings.getWarSiegeAttackerCostUpFrontPerPlot() * townBlocks.size();
+	}
+
+	public String getFormattedHoursUntilSiegeImmunityEnds() {
+		double hoursUntilSiegeCooldownEnds = siegeImmunityEndTime - System.currentTimeMillis();
+		return TimeMgmt.getFormattedTimeValue(hoursUntilSiegeCooldownEnds);
+	}
+
+	public boolean isRuined() {
+		return (residents.size() == 0 || recentlyRuinedEndTime > 0);
+	}
+
+	/*
+	888 = just ruined.
+	999 = 1 upkeep cycle completed since being ruined.
+	 */
+	public void setRecentlyRuinedEndTime(long recentlyRuinedEndTime) {
+		this.recentlyRuinedEndTime = recentlyRuinedEndTime;
+	}
+
+	public long getRecentlyRuinedEndTime() {
+		return recentlyRuinedEndTime;
+	}
+
+	public void setOccupied(boolean occupied) {
+		this.occupied = occupied;
+	}
+
+	public boolean isOccupied() {
+		return this.occupied;
+	}
 	
 	public List<TownBlock> getTownBlocksForPlotGroup(PlotObjectGroup group) {
 		
@@ -1470,5 +1590,41 @@ public class Town extends TownyObject implements ResidentList, TownyInviter, Obj
 	@Deprecated
 	public String getEconomyName() {
 		return StringMgmt.trimMaxLength(Town.ECONOMY_ACCOUNT_PREFIX + getName(), 32);
+	}
+
+	public boolean isNeutral() {
+		return neutral;
+	}
+
+	public int getNeutralityChangeConfirmationCounterDays() {
+		return neutralityChangeConfirmationCounterDays;
+	}
+
+	public void decrementNeutralityChangeConfirmationCounterDays() {
+		neutralityChangeConfirmationCounterDays--;
+	}
+
+	public void flipNeutral() {
+		neutral = !neutral;
+	}
+
+	public void flipDesiredNeutralityValue() {
+		desiredNeutralityValue = !desiredNeutralityValue;
+	}
+
+	public void setNeutralityChangeConfirmationCounterDays(int counterValueDays) {
+		neutralityChangeConfirmationCounterDays = counterValueDays;
+	}
+
+	public void setDesiredNeutralityValue(boolean value) {
+		desiredNeutralityValue = value;
+	}
+
+	public boolean getDesiredNeutralityValue() {
+		return desiredNeutralityValue;
+	}
+
+	public void setNeutral(boolean value) {
+		neutral = value;
 	}
 }

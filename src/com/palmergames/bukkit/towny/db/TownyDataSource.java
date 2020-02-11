@@ -12,6 +12,8 @@ import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.TownyWorld;
 import com.palmergames.bukkit.towny.regen.PlotBlockData;
+import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
+import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
@@ -56,12 +58,11 @@ public abstract class TownyDataSource {
 
 	public boolean loadAll() {
 
-		return loadWorldList() && loadNationList() && loadTownList() && loadPlotGroupList() && loadResidentList() && loadTownBlockList() && loadWorlds() && loadNations() && loadTowns() && loadResidents() && loadTownBlocks() && loadPlotGroups() && loadRegenList() && loadSnapshotList();
+		return loadWorldList() && loadNationList() && loadTownList() && loadPlotGroupList() && loadSiegeZoneList() && loadResidentList() && loadTownBlockList() && loadWorlds() && loadNations() && loadTowns() && loadSiegeZones() && loadResidents() && loadTownBlocks() && loadPlotGroups() && loadRegenList() && loadSnapshotList();
 	}
 
 	public boolean saveAll() {
-
-		return saveWorldList() && saveNationList() && saveTownList() && savePlotGroupList() && saveResidentList() && saveTownBlockList() && saveWorlds() && saveNations() && saveTowns() && saveResidents() && savePlotGroups() && saveAllTownBlocks() && saveRegenList() && saveSnapshotList();
+		return saveWorldList() && saveNationList() && saveTownList() && savePlotGroupList() && saveSiegeZoneList() && saveResidentList() && saveTownBlockList() && saveWorlds() && saveNations() && saveTowns() && saveResidents() && savePlotGroups() && saveSiegeZones() && saveAllTownBlocks() && saveRegenList() && saveSnapshotList();
 	}
 
 	public boolean saveAllWorlds() {
@@ -84,6 +85,8 @@ public abstract class TownyDataSource {
 
 	abstract public boolean loadNationList();
 
+	abstract public boolean loadSiegeZoneList();
+
 	abstract public boolean loadWorldList();
 
 	abstract public boolean loadRegenList();
@@ -97,6 +100,8 @@ public abstract class TownyDataSource {
 	abstract public boolean loadTown(Town town);
 
 	abstract public boolean loadNation(Nation nation);
+
+	abstract public boolean loadSiegeZone(SiegeZone siegeZone);
 
 	abstract public boolean loadWorld(TownyWorld world);
 
@@ -114,6 +119,8 @@ public abstract class TownyDataSource {
 
 	abstract public boolean saveNationList();
 
+	abstract public boolean saveSiegeZoneList();
+
 	abstract public boolean saveWorldList();
 
 	abstract public boolean saveRegenList();
@@ -127,6 +134,8 @@ public abstract class TownyDataSource {
 	abstract public boolean savePlotGroup(PlotObjectGroup group);
 
 	abstract public boolean saveNation(Nation nation);
+
+	abstract public boolean saveSiegeZone(SiegeZone siegeFront);
 
 	abstract public boolean saveWorld(TownyWorld world);
 
@@ -147,6 +156,8 @@ public abstract class TownyDataSource {
 	abstract public void deleteTown(Town town);
 
 	abstract public void deleteNation(Nation nation);
+
+	abstract public void deleteSiegeZone(SiegeZone siegeFront);
 
 	abstract public void deleteWorld(TownyWorld world);
 
@@ -206,6 +217,17 @@ public abstract class TownyDataSource {
 		return true;
 	}
 
+	public boolean loadSiegeZones() {
+		TownyMessaging.sendDebugMsg("Loading Siege Zones");
+		for (SiegeZone siegeZone : getSiegeZones())
+			if (!loadSiegeZone(siegeZone)) {
+				System.out.println("[Towny] Loading Error: Could not read siege zone data '" + siegeZone.getName() + "'.");
+				return false;
+			}
+		return true;
+	}
+
+
 	public boolean loadWorlds() {
 
 		TownyMessaging.sendDebugMsg("Loading Worlds");
@@ -254,6 +276,13 @@ public abstract class TownyDataSource {
 		return true;
 	}
 
+	public boolean saveSiegeZones() {
+		TownyMessaging.sendDebugMsg("Saving Siege Zones");
+		for (SiegeZone siegeZone : getSiegeZones())
+			saveSiegeZone(siegeZone);
+		return true;
+	}
+
 	public boolean saveWorlds() {
 
 		TownyMessaging.sendDebugMsg("Saving Worlds");
@@ -290,10 +319,14 @@ public abstract class TownyDataSource {
 	abstract public Town getTown(String name) throws NotRegisteredException;
 
 	abstract public Town getTown(UUID uuid) throws NotRegisteredException;
-
+	
+	abstract public SiegeZone getSiegeZone(String name) throws NotRegisteredException;
+		
 	abstract public List<Nation> getNations(String[] names);
 
 	abstract public List<Nation> getNations();
+
+	abstract public List<SiegeZone> getSiegeZones();
 
 	abstract public Nation getNation(String name) throws NotRegisteredException;
 
@@ -319,9 +352,17 @@ public abstract class TownyDataSource {
 
 	abstract public void newNation(String name) throws AlreadyRegisteredException, NotRegisteredException;
 
+	abstract public void newSiegeZone(String attackingNationName, String defendingTownName) throws AlreadyRegisteredException;
+
 	abstract public void newWorld(String name) throws AlreadyRegisteredException;
 
 	abstract public void removeTown(Town town);
+
+	abstract public void removeTown(Town town, boolean delayFullRemoval);
+
+	public abstract void removeSiege(Siege siege);
+
+	public abstract void removeSiegeZone(SiegeZone siegeZone);
 
 	abstract public void removeWorld(TownyWorld world) throws UnsupportedOperationException;
 
@@ -330,6 +371,8 @@ public abstract class TownyDataSource {
 	abstract public Set<String> getTownsKeys();
 
 	abstract public Set<String> getNationsKeys();
+
+	abstract public Set<String> getSiegeZonesKeys();
 
 	abstract public List<Town> getTownsWithoutNation();
 
@@ -344,4 +387,8 @@ public abstract class TownyDataSource {
 	abstract public void renamePlayer(Resident resident, String newName) throws AlreadyRegisteredException, NotRegisteredException;
 
 	abstract public void renameGroup(PlotObjectGroup group, String newName) throws AlreadyRegisteredException;
+
+	abstract public void removeTownFromNation(Towny plugin, Town town, Nation nation);
+
+	abstract public void addTownToNation(Towny plugin, Town town,Nation nation);
 }
