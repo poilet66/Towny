@@ -4157,3 +4157,4 @@ v0.92.0.11:
     - Reverted ProtectionRegenTask class to previous version found in 1.13 branch (API Incompatibility)
       - This may result in run-time bugs! I am not familiar with this class, or the methods that call it.
     - Changed to full-path import for ActionType in TownyPlayerListener.
+
