@@ -608,7 +608,7 @@ public class TownyAdminCommand extends BaseCommand implements CommandExecutor {
 				if (!isConsole) {
 					TownyMessaging.sendMessage(sender, String.format(TownySettings.getLangString("town_deleted_by_admin"), town.getName()));
 					TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_del_town"), town.getName()));
-					townyUniverse.getDataSource().removeTown(town);
+					townyUniverse.getDataSource().removeTown(town, false);
 				} else { //isConsole
 					ConfirmationHandler.addConfirmation(ConfirmationType.TOWN_DELETE, town); // It takes the senders town & nation, an admin deleting another town has no confirmation.
 					TownyMessaging.sendConfirmationMessage(Bukkit.getConsoleSender(), null, null, null, null);					

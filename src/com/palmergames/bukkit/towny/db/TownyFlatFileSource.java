@@ -8,6 +8,9 @@ import com.palmergames.bukkit.towny.exceptions.AlreadyRegisteredException;
 import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.object.Nation;
+import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
+import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
+import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
 import com.palmergames.bukkit.towny.object.PlotObjectGroup;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
@@ -21,6 +24,7 @@ import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.NameValidation;
 import com.palmergames.util.FileMgmt;
 import com.palmergames.util.StringMgmt;
+import com.palmergames.util.TimeMgmt;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitTask;
@@ -69,6 +73,8 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 			dataFolderPath + File.separator + "towns" + File.separator + "deleted",
 			dataFolderPath + File.separator + "nations",
 			dataFolderPath + File.separator + "nations" + File.separator + "deleted",
+			dataFolderPath + File.separator + "siegezones",
+			dataFolderPath + File.separator + "siegezones" + File.separator + "deleted",
 			dataFolderPath + File.separator + "worlds",
 			dataFolderPath + File.separator + "worlds" + File.separator + "deleted",
 			dataFolderPath + File.separator + "plot-block-data",
@@ -79,6 +85,7 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 			dataFolderPath + File.separator + "residents.txt",
 			dataFolderPath + File.separator + "towns.txt",
 			dataFolderPath + File.separator + "nations.txt",
+			dataFolderPath + File.separator + "siegezones.txt",
 			dataFolderPath + File.separator + "worlds.txt",
 			dataFolderPath + File.separator + "regen.txt",
 			dataFolderPath + File.separator + "snapshot_queue.txt",
@@ -188,6 +195,12 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 		names = getNationsKeys();
 
 		FileMgmt.deleteUnusedFiles(new File(path), names);
+		
+		path = dataFolderPath + File.separator + "siegezones";
+		names = getSiegeZonesKeys();
+
+		FileMgmt.deleteUnusedFiles(new File(path), names);
+
 	}
 
 	public String getResidentFilename(Resident resident) {
@@ -205,6 +218,11 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 		return dataFolderPath + File.separator + "nations" + File.separator + nation.getName() + ".txt";
 	}
 
+	public String getSiegeZoneFilename(SiegeZone siegeZone) {
+
+		return dataFolderPath + File.separator + "siegezones" + File.separator + siegeZone.getName() + ".txt";
+	}
+	
 	public String getWorldFilename(TownyWorld world) {
 
 		return dataFolderPath + File.separator + "worlds" + File.separator + world.getName() + ".txt";
@@ -434,6 +452,45 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 			e.printStackTrace();
 			return false;
 			
+		} finally {
+			try {
+				fin.close();
+			} catch (IOException ignore) {
+			}
+		}
+	}
+	
+	@Override
+	public boolean loadSiegeZoneList() {
+		TownyMessaging.sendDebugMsg("Loading Siege Zone List");
+		String siegeZoneName = null;
+		String line = null;
+		BufferedReader fin;
+
+		try {
+			fin = new BufferedReader(new InputStreamReader(new FileInputStream(dataFolderPath + File.separator + "siegezones.txt"),StandardCharsets.UTF_8));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		try {
+			while ((siegeZoneName = fin.readLine()) != null) {
+				if (!siegeZoneName.equals("")) {
+					newSiegeZone(siegeZoneName);
+				}
+			}
+			return true;
+
+		} catch (AlreadyRegisteredException e) {
+			e.printStackTrace();
+			return false;
+
+		} catch (Exception e) {
+			TownyMessaging.sendErrorMsg("Error Loading Siege zone list at " + siegeZoneName + ", in towny\\data\\sieges.txt");
+			e.printStackTrace();
+			return false;
+
 		} finally {
 			try {
 				fin.close();
@@ -703,11 +760,15 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 						}
 					}
 				}
-				
+
 				line = keys.get("mayor");
 				if (line != null)
-					town.setMayor(getResident(line));
-				
+					try {
+						town.setMayor(getResident(line));
+					} catch (Exception e) {
+						town.setMayor(null);
+					}
+
 				town.setTownBoard(keys.get("townBoard"));
 				
 				line = keys.get("tag");
@@ -970,6 +1031,152 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 				if (line != null && !line.isEmpty())
 					town.setMetadata(line.trim());
 				
+				line = keys.get("recentlyRuinedEndTime");
+				if (line != null) {
+					try {
+						town.setRecentlyRuinedEndTime(Long.parseLong(line));
+					} catch (Exception e) {
+						town.setRecentlyRuinedEndTime(0);
+					}
+				} else {
+					town.setRecentlyRuinedEndTime(0);
+				}
+
+				line = keys.get("revoltCooldownEndTime");
+				if (line != null) {
+					try {
+						town.setRevoltImmunityEndTime(Long.parseLong(line));
+					} catch (Exception e) {
+						town.setRevoltImmunityEndTime(0);
+					}
+				} else {
+					town.setRevoltImmunityEndTime(0);
+				}
+
+				line = keys.get("siegeCooldownEndTime");
+				if (line != null) {
+					try {
+						town.setSiegeImmunityEndTime(Long.parseLong(line));
+					} catch (Exception e) {
+						town.setSiegeImmunityEndTime(0);
+					}
+				} else {
+					/*
+					 * On first load of system, give each town a random immunity cooldown
+					 * This should help prevent everyone killing each other 5 mins after system deployment
+					 */
+					long siegeImmunityDurationMillis = (long)(Math.random() * (TownySettings.getWarSiegeSiegeImmunityTimeNewTownsHours() + 1) * TimeMgmt.ONE_HOUR_IN_MILLIS);
+					town.setSiegeImmunityEndTime(System.currentTimeMillis() + siegeImmunityDurationMillis);
+				}
+
+				//Load Siege values
+				line = keys.get("siegeStatus");
+				if (line != null) {
+					try {
+						Siege siege = new Siege(town);
+						town.setSiege(siege);
+						siege.setStatus(SiegeStatus.parseString(line));
+					} catch (Exception e) {
+						town.setSiege(null);
+					}
+				} else {
+					town.setSiege(null);
+				}
+
+				if (town.hasSiege()) {
+					Siege siege = town.getSiege();
+
+					try {
+						line = keys.get("siegeTownPlundered");
+						siege.setTownPlundered(Boolean.parseBoolean(line));
+					} catch (Exception e) {
+						siege.setTownPlundered(false);
+					}
+
+					try {
+						line = keys.get("siegeTownInvaded");
+						siege.setTownInvaded(Boolean.parseBoolean(line));
+					} catch (Exception e) {
+						siege.setTownInvaded(false);
+					}
+
+					try {
+						line = keys.get("siegeAttackerWinner");
+						if (line != null) {
+							siege.setAttackerWinner(getNation(line));
+						} else {
+							siege.setAttackerWinner(null);
+						}
+					} catch (Exception e) {
+						siege.setAttackerWinner(null);
+					}
+					try {
+						line = keys.get("siegeActualStartTime");
+						siege.setStartTime(Long.parseLong(line));
+					} catch (Exception e) {
+						siege.setStartTime(0);
+					}
+
+					try {
+						line = keys.get("siegeScheduledEndTime");
+						siege.setScheduledEndTime(Long.parseLong(line));
+					} catch (Exception e) {
+						siege.setScheduledEndTime(0);
+					}
+
+					try {
+						line = keys.get("siegeActualEndTime");
+						siege.setActualEndTime(Long.parseLong(line));
+					} catch (Exception e) {
+						siege.setActualEndTime(0);
+					}
+
+					try {
+						line = keys.get("siegeNextUpkeepTime");
+						siege.setActualEndTime(Long.parseLong(line));
+					} catch (Exception e) {
+						siege.setActualEndTime(0);
+					}
+
+					try {
+						line = keys.get("siegeZones");
+						String[] siegeZoneNames = line.split(",");
+						SiegeZone siegeZone;
+						for (String siegeZoneName : siegeZoneNames) {
+							siegeZone = universe.getDataSource().getSiegeZone(siegeZoneName);
+							town.getSiege().getSiegeZones().put(siegeZone.getAttackingNation(), siegeZone);
+						}
+					} catch (Exception e) {
+					}
+				}
+				line = keys.get("occupied");
+				if (line != null)
+					try {
+						town.setOccupied(Boolean.parseBoolean(line));
+					} catch (Exception ignored) {
+					}
+
+				line = keys.get("neutral");
+				if (line != null)
+					try {
+						town.setNeutral(Boolean.parseBoolean(line));
+					} catch (Exception ignored) {
+					}
+
+				line = keys.get("desiredNeutralityValue");
+				if (line != null)
+					try {
+						town.setDesiredNeutralityValue(Boolean.parseBoolean(line));
+					} catch (Exception ignored) {
+					}
+
+				line = keys.get("neutralityChangeConfirmationCounterDays");
+				if (line != null)
+					try {
+						town.setNeutralityChangeConfirmationCounterDays(Integer.parseInt(line));
+					} catch (Exception ignored) {
+					}
+
 			} catch (Exception e) {
 				TownyMessaging.sendErrorMsg("Loading Error: Exception while reading town file " + town.getName() + " at line: " + line + ", in towny\\data\\towns\\" + town.getName() + ".txt");
 				return false;
@@ -1064,6 +1271,18 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 					}
 				}
 				
+				line = keys.get("siegeZones");
+				if (line != null) {
+					tokens = line.split(",");
+					for (String token : tokens) {
+						if (!token.isEmpty()) {
+							SiegeZone siegeZone = getSiegeZone(token);
+							if (siegeZone != null)
+								nation.addSiegeZone(siegeZone);
+						}
+					}
+				}
+				
 				line = keys.get("taxes");
 				if (line != null)
 					try {
@@ -1148,6 +1367,76 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 			} finally {
 				saveNation(nation);
 			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	@Override
+	public boolean loadSiegeZone(SiegeZone siegeZone) {
+		String line = "";
+		String[] locationValues;
+		World flagLocationWorld;
+		double flagLocationX;
+		double flagLocationY;
+		double flagLocationZ;
+
+		String path = getSiegeZoneFilename(siegeZone);
+		File fileSiegeZone = new File(path);
+		if (fileSiegeZone.exists() && fileSiegeZone.isFile()) {
+			try {
+				HashMap<String, String> keys = new HashMap<>();
+				Properties properties = new Properties();
+				properties.load(new InputStreamReader(new FileInputStream(fileSiegeZone), StandardCharsets.UTF_8));
+				for (String key : properties.stringPropertyNames()) {
+					String value = properties.getProperty(key);
+					keys.put(key, String.valueOf(value));
+				}
+
+				line = keys.get("flagLocation");
+				locationValues = line.split(",");
+				flagLocationWorld = BukkitTools.getWorld(locationValues[0]);
+				flagLocationX = Double.parseDouble(locationValues[1]);
+				flagLocationY = Double.parseDouble(locationValues[2]);
+				flagLocationZ = Double.parseDouble(locationValues[3]);
+
+				Location flagLocation = new Location(
+					flagLocationWorld,
+					flagLocationX,
+					flagLocationY,
+					flagLocationZ);
+				siegeZone.setFlagLocation(flagLocation);
+
+				line = keys.get("attackingNation");
+				siegeZone.setAttackingNation(getNation(line));
+
+				line = keys.get("defendingTown");
+				siegeZone.setDefendingTown(getTown(line));
+
+				//If the defending town has no siege, this is data corruption
+				if(!siegeZone.getDefendingTown().hasSiege()) {
+					System.out.println("[Towny] Loading Error: The defending town has no siege");
+					return false;
+				}
+
+				line = keys.get("siegePoints");
+				siegeZone.setSiegePoints(Integer.parseInt(line));
+
+				line = keys.get("warChestAmount");
+				if (line != null && !line.isEmpty())
+					siegeZone.setWarChestAmount(Double.parseDouble(line));
+				
+
+				//Player-scoretime maps are not saved/loaded
+				//As it is tricky but with no significant benefit
+
+			} catch (Exception e) {
+				String filename = getSiegeZoneFilename(siegeZone);
+				TownyMessaging.sendErrorMsg("Loading Error: Exception while reading siege zone file at line: " + line + ", in file: " + filename);
+				return false;
+			}
+
 			return true;
 		} else {
 			return false;
@@ -1740,6 +2029,22 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 	}
 
 	@Override
+	public boolean saveSiegeZoneList() {
+		List<String> list = new ArrayList<>();
+
+		for (SiegeZone siegeZone : getSiegeZones()) {
+			list.add(siegeZone.getName());
+		}
+
+		/*
+		 *  Make sure we only save in async
+		 */
+		this.queryQueue.add(new FlatFile_Task(list, dataFolderPath + File.separator + "siegezones.txt"));
+
+		return true;
+	}
+	
+	@Override
 	public boolean saveWorldList() {
 
 		List<String> list = new ArrayList<>();
@@ -1934,7 +2239,35 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 			}
 		}
 		list.add("metadata=" + md.toString());
+
+		//Ruins
+		list.add("recentlyRuinedEndTime=" + town.getRecentlyRuinedEndTime());
+
+		// Sieges & Revolts
+		list.add("revoltCooldownEndTime=" + town.getRevoltImmunityEndTime());
+		list.add("siegeCooldownEndTime=" + town.getSiegeImmunityEndTime());
+
+		if(town.hasSiege()) {
+			Siege siege = town.getSiege();
+			list.add("siegeStatus=" + siege.getStatus().toString());
+			list.add("siegeTownPlundered=" + siege.getTownPlundered());
+			list.add("siegeTownInvaded=" + siege.getTownInvaded());
+			if (siege.getAttackerWinner() != null) {
+				list.add("siegeAttackerWinner=" + siege.getAttackerWinner().getName());
+			}
+			list.add("siegeActualStartTime=" + siege.getStartTime());
+			list.add("siegeScheduledEndTime=" + siege.getScheduledEndTime());
+			list.add("siegeActualEndTime=" + siege.getActualEndTime());
+			list.add("siegeZones=" + StringMgmt.join(town.getSiege().getSiegeZoneNames(), ","));
+		}
 		
+		list.add("occupied=" + town.isOccupied());
+
+		//Neutrality
+		list.add("neutral=" + town.isNeutral());
+		list.add("desiredNeutralityValue=" + town.getDesiredNeutralityValue());
+		list.add("neutralityChangeConfirmationCounterDays=" + town.getNeutralityChangeConfirmationCounterDays());
+
 		/*
 		 *  Make sure we only save in async
 		 */
@@ -1988,6 +2321,8 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 
 		list.add("enemies=" + StringMgmt.join(nation.getEnemies(), ","));
 
+		list.add("siegeZones=" + StringMgmt.join(nation.getSiegeZoneNames(), ","));
+
 		// Taxes
 		list.add("taxes=" + nation.getTaxes());
 		// Nation Spawn Cost
@@ -2030,7 +2365,31 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 		return true;
 
 	}
+	
+	@Override
+	public boolean saveSiegeZone(SiegeZone siegeZone) {
+		List<String> list = new ArrayList<>();
 
+		list.add("flagLocation=" + siegeZone.getFlagLocation().getWorld().getName()
+			+ "," + siegeZone.getFlagLocation().getX()
+			+ "," + siegeZone.getFlagLocation().getY()
+			+ "," + siegeZone.getFlagLocation().getZ());
+		list.add("attackingNation=" + siegeZone.getAttackingNation().getName());
+		list.add("defendingTown=" + siegeZone.getDefendingTown().getName());
+		list.add("siegePoints=" + siegeZone.getSiegePoints());
+		list.add("warChestAmount=" + siegeZone.getWarChestAmount());
+
+		//Player-scoretime maps are not saved/loaded
+		//As it is tricky but with no significant benefit
+
+		/*
+		 *  Make sure we only save in async
+		 */
+		this.queryQueue.add(new FlatFile_Task(list, getSiegeZoneFilename(siegeZone)));
+
+		return true;
+	}
+	
 	@Override
 	public boolean saveWorld(TownyWorld world) {
 
@@ -2617,7 +2976,16 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 			FileMgmt.moveFile(file, ("deleted"));
 		}
 	}
+	
+	@Override
+	public void deleteSiegeZone(SiegeZone siegeZone) {
 
+		File file = new File(getSiegeZoneFilename(siegeZone));
+		if (file.exists()) {
+			FileMgmt.moveFile(file, ("deleted"));
+		}
+	}
+	
 	@Override
 	public void deleteWorld(TownyWorld world) {
 
