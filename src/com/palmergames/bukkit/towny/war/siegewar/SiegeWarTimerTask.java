@@ -61,7 +61,7 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 			evaluateSieges();
 
 			evaluateRuinsRemovals();
-			
+
 			evaluatePvpImmunityRemovals();
 		}
 	}

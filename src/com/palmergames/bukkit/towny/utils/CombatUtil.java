@@ -168,7 +168,7 @@ public class CombatUtil {
 				}
 
 				/*
-				 * Check if either player has pvp immunity 
+				 * Check if either player has pvp immunity
 				 */
 				if(TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegePostSpawnPvpImmunityEnabled()) {
 					try {
