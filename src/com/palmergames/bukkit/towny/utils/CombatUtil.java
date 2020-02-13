@@ -167,6 +167,26 @@ public class CombatUtil {
 					return !event.isCancelled();
 				}
 
+				/*
+				 * Check if either player has pvp immunity 
+				 */
+				try {
+					TownyUniverse universe = TownyUniverse.getInstance();
+					Resident attackingResident = universe.getDataSource().getResident(attackingPlayer.getName());
+					Resident defendingResident = universe.getDataSource().getResident(defendingPlayer.getName());
+					
+					if(attackingResident.isPvpImmune() || defendingResident.isPvpImmune()) {
+						DisallowedPVPEvent event = new DisallowedPVPEvent(attackingPlayer, defendingPlayer);
+						plugin.getServer().getPluginManager().callEvent(event);
+
+						return !event.isCancelled();
+					}
+				} catch (Exception e) {
+					TownyMessaging.sendErrorMsg(e.getMessage());
+					e.printStackTrace();
+				}
+				
+				
 			} else {
 				/*
 				 * Remove animal killing prevention start

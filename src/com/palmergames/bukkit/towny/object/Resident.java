@@ -54,6 +54,8 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 	private List<String> nationRanks = new ArrayList<>();
 	private List<TownBlock> townBlocks = new ArrayList<>();
 	private TownyPermission permissions = new TownyPermission();
+	private boolean pvpImmune = false;
+	private long pvpImmunityEndTime = 0;
 
 	public Resident(String name) {
 		super(name);
@@ -758,6 +760,22 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 		} else {
 			return BukkitTools.getWorlds().get(0);
 		}
+	}
+
+	public boolean isPvpImmune() {
+		return pvpImmune;
+	}
+
+	public void setPvpImmune(boolean pvpImmune) {
+		this.pvpImmune = pvpImmune;
+	}
+
+	public long getPvpImmunityEndTime() {
+		return pvpImmunityEndTime;
+	}
+
+	public void setPvpImmunityEndTime(long pvpImmunityEndTime) {
+		this.pvpImmunityEndTime = pvpImmunityEndTime;
 	}
 }
 

@@ -16,6 +16,7 @@ import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
 import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
 import com.palmergames.bukkit.towny.war.siegewar.timeractions.AttackerWin;
 import com.palmergames.bukkit.towny.war.siegewar.timeractions.DefenderWin;
+import com.palmergames.bukkit.towny.war.siegewar.timeractions.RemovePvpImmunity;
 import com.palmergames.bukkit.towny.war.siegewar.timeractions.RemoveRuinedTowns;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarBlockUtil;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarMoneyUtil;
@@ -60,6 +61,8 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 			evaluateSieges();
 
 			evaluateRuinsRemovals();
+			
+			evaluatePvpImmunityRemovals();
 		}
 	}
 
@@ -96,6 +99,14 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 		}
 	}
 
+	/**
+	 * Evaluate pvp immunity removals
+	 */
+	private void evaluatePvpImmunityRemovals() {
+		if(TownySettings.getWarSiegePostSpawnPvpImmunityEnabled()) {
+			RemovePvpImmunity.removePvpImmunity();
+		}
+	}
 
 	/**
 	 * Evaluate just 1 siege zone
