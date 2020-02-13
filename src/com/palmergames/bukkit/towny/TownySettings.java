@@ -3086,6 +3086,6 @@ public class TownySettings {
 	public static int getWarSiegePostSpawnPvpImmunityDurationSeconds() {
 		return getInt(ConfigNodes.WAR_SIEGE_POST_SPAWN_PVP_IMMUNITY_DURATION_SECONDS);
 	}
-	
+
 }
 

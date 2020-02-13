@@ -1874,7 +1874,7 @@ public enum ConfigNodes {
 			"war.siege.switches.post_spawn_pvp_immunity_enabled",
 			"true",
 			"# If this value is true, then spawn camping is prevented/reduced by the following automatic measure: ",
-			"# - After spawning, a player will be immune to (and cannot cause) pvp damage for 1 minute (default, configurable).", 
+			"# - After spawning, a player will be immune to (and cannot cause) pvp damage for 1 minute (default, configurable).",
 			"# - Thus, during a siege, even if the enemy has breached the town walls, a spawning player has time to get to a safe location.",
 			"# - A typical safe location would be a room far from spawn with a door as an entrance.",
 	        "# - If the player enters the room and closes the door, either the enemy will be outside and unable to enter, or trapped inside."),
