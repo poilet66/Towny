@@ -14,6 +14,7 @@ import com.palmergames.bukkit.towny.permissions.PermissionNodes;
 import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
 import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
 import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
+import com.palmergames.bukkit.util.BukkitTools;
 import org.bukkit.entity.Player;
 
 import java.util.HashSet;
@@ -74,20 +75,13 @@ public class SiegeWarPointsUtil {
 	/**
 	 * This method determines if a siege point penalty should be applied
 	 *
-	 * This method is used in all cases where a siege-ranked resident leaves a siege point zone unexpectedly
+	 * These are examples where a penalty is awarded
 	 * 
 	 * e.g.
-	 * - if the resident dies
-	 * - if the resident leaves the town
-	 * - if the resident's soldier rank is removed
-	 * - if an attacking nation removes the resident's nation from its ally list. 
-	 *
-	 * IMPORTANT NOTE!
-	 * - This method is designed to be simplistic and brutal, to reduce the changes of complex exploits being found by players.
-	 * - Thus for example you may see points being deducted twice in some scenarios when once would be preferred.
-	 * - It is advised to avoid complicating this method for usability,
-	 *   but rather to ensure that players are simply advised: 
-	 *   "do not modify armed forces or alliances while armed force members are close to sieges."
+	 * - if a military ranked resident is killed within the death zone of a siege
+	 * - if a military ranked resident leaves a town/nation which is involved in a siege 
+	 * - if a military ranked resident's military rank is removed while a town/nation is involved in a siege
+	 * - if an alliance is cancelled while either nation has military ranked players and is involved in a siege 
 	 * 
 	 * @param resident the player leaving the zone
 	 * @param unformattedErrorMessage the error message to be shown if points are deducted
@@ -197,6 +191,16 @@ public class SiegeWarPointsUtil {
 		//Inform allies
 		for(Nation alliedNation: alliesToInform) {
 			TownyMessaging.sendPrefixedNationMessage(alliedNation, message);
+		}
+	}
+	
+	private Player getPlayerWhetherOnlineOrOffline(Resident resident) {
+		for (Player player : BukkitTools.getServer().getOfflinePlayers()) {
+			if (player != null) {
+				if (player.getName().equals(resident.getName())) {
+					return player;
+				}
+			}
 		}
 	}
 }
