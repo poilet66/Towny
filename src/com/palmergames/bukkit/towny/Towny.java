@@ -238,6 +238,7 @@ public class Towny extends JavaPlugin {
 
 		TownyTimerHandler.toggleTownyRepeatingTimer(false);
 		TownyTimerHandler.toggleDailyTimer(false);
+		TownyTimerHandler.toggleSiegeWarTimer(false);
 		TownyTimerHandler.toggleMobRemoval(false);
 		TownyTimerHandler.toggleHealthRegen(false);
 		TownyTimerHandler.toggleTeleportWarmup(false);
@@ -262,6 +263,8 @@ public class Towny extends JavaPlugin {
 
 	public boolean load() {
 
+		checkCitizens();
+		
 		if (!townyUniverse.loadSettings()) {
 			setError(true);
 			return false;
@@ -274,6 +277,7 @@ public class Towny extends JavaPlugin {
 		// make sure the timers are stopped for a reset
 		TownyTimerHandler.toggleTownyRepeatingTimer(false);
 		TownyTimerHandler.toggleDailyTimer(false);
+		TownyTimerHandler.toggleSiegeWarTimer(false);
 		TownyTimerHandler.toggleMobRemoval(false);
 		TownyTimerHandler.toggleHealthRegen(false);
 		TownyTimerHandler.toggleTeleportWarmup(false);
@@ -283,6 +287,7 @@ public class Towny extends JavaPlugin {
 		// Start timers
 		TownyTimerHandler.toggleTownyRepeatingTimer(true);
 		TownyTimerHandler.toggleDailyTimer(true);
+		TownyTimerHandler.toggleSiegeWarTimer(true);
 		TownyTimerHandler.toggleMobRemoval(true);
 		TownyTimerHandler.toggleHealthRegen(TownySettings.hasHealthRegen());
 		TownyTimerHandler.toggleTeleportWarmup(TownySettings.getTeleportWarmupTime() > 0);
@@ -293,6 +298,15 @@ public class Towny extends JavaPlugin {
 		return true;
 	}
 
+	private void checkCitizens() {
+		/*
+		 * Test for Citizens2 so we can avoid removing their NPC's
+		 */
+		Plugin test = getServer().getPluginManager().getPlugin("Citizens");
+		if (test != null)
+			citizens2 = getServer().getPluginManager().getPlugin("Citizens").isEnabled();
+	}
+	
 	private void checkPlugins() {
 
 		List<String> using = new ArrayList<>();
@@ -357,15 +371,6 @@ public class Towny extends JavaPlugin {
 			TownyMessaging.sendErrorMsg("You may safely remove Questioner.jar from your plugins folder.");
 		}
 
-		/*
-		 * Test for Citizens2 so we can avoid removing their NPC's
-		 */
-		test = getServer().getPluginManager().getPlugin("Citizens");
-		if (test != null) {
-			if (getServer().getPluginManager().getPlugin("Citizens").isEnabled()) {
-				citizens2 = test.getDescription().getVersion().startsWith("2");
-			}
-		}
 		test = getServer().getPluginManager().getPlugin("PlaceholderAPI");
 		if(test != null){
             new TownyPlaceholderExpansion(this).register();

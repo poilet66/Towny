@@ -18,6 +18,7 @@ import com.palmergames.bukkit.towny.invites.exceptions.TooManyInvitesException;
 import com.palmergames.bukkit.towny.object.metadata.CustomDataField;
 import com.palmergames.bukkit.towny.permissions.TownyPerms;
 import com.palmergames.bukkit.towny.tasks.SetDefaultModes;
+import com.palmergames.bukkit.towny.war.siegewar.SiegeWarRankController;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.util.StringMgmt;
 import org.bukkit.Location;
@@ -53,6 +54,7 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 	private List<String> nationRanks = new ArrayList<>();
 	private List<TownBlock> townBlocks = new ArrayList<>();
 	private TownyPermission permissions = new TownyPermission();
+	private long damageImmunityEndTime = 0;
 
 	public Resident(String name) {
 		super(name);
@@ -232,7 +234,9 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 	}
 
 	public void setTitle(String title) {
-		this.title = title.trim();
+		if (title.matches(" "))
+			title = "";
+		this.title = title;
 	}
 
 	public String getTitle() {
@@ -246,7 +250,9 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 	}
 
 	public void setSurname(String surname) {
-		this.surname = surname.trim();
+		if (surname.matches(" "))
+			surname = "";
+		this.surname = surname;
 	}
 
 	public String getSurname() {
@@ -568,6 +574,9 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 
 	public boolean removeTownRank(String rank) throws NotRegisteredException {
 
+		if(TownySettings.getWarSiegeEnabled())
+			SiegeWarRankController.evaluateTownRemoveRank(this, rank);
+
 		if (townRanks.contains(rank)) {
 			townRanks.remove(rank);
 			if (BukkitTools.isOnline(this.getName())) {
@@ -610,6 +619,9 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 	}
 
 	public boolean removeNationRank(String rank) throws NotRegisteredException {
+
+		if(TownySettings.getWarSiegeEnabled())
+			SiegeWarRankController.evaluateNationRemoveRank(this, rank);
 
 		if (nationRanks.contains(rank)) {
 			nationRanks.remove(rank);
@@ -801,6 +813,14 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 		} else {
 			return BukkitTools.getWorlds().get(0);
 		}
+	}
+
+	public long getDamageImmunityEndTime() {
+		return damageImmunityEndTime;
+	}
+
+	public void setDamageImmunityEndTime(long pvpImmunityEndTime) {
+		this.damageImmunityEndTime = pvpImmunityEndTime;
 	}
 }
 
