@@ -589,6 +589,15 @@ public enum ConfigNodes {
             "global_nation_settings.default.open",
             "false",
             "# If set to true, any newly made nation will have open status and any town may join without an invite."),
+	GNATION_MANDATORY_DYNMAP_COLOR(
+			"global_nation_settings.mandatory_dynmap_color",
+			"true",
+			"# If set to true, then each nation must have a dynmap color specified.",
+			"# This is currently done by having 'mapcolor=<hexcode>' at the end of the nation board.",
+			"# Nations are checked each day by the daily timer.",
+			"# If a nation has not specified a colour, a random one will be added.",
+			"# New nations are automatically assigned a color."),
+	
 	PLUGIN(
 			"plugin",
 			"",

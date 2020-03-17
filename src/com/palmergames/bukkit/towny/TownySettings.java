@@ -2793,7 +2793,11 @@ public class TownySettings {
 	public static int getMaxTownsPerNation() {
 		return getInt(ConfigNodes.GNATION_SETTINGS_MAX_TOWNS_PER_NATION);
 	}
-	
+
+	public static boolean getNationMandatoryDynmapColor() {
+		return getBoolean(ConfigNodes.GNATION_MANDATORY_DYNMAP_COLOR);
+	}
+
 	public static double getSpawnTravelCost() {
 		return getDouble(ConfigNodes.ECO_PRICE_TOWN_SPAWN_TRAVEL_PUBLIC);
 	}
