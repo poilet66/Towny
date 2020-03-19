@@ -48,6 +48,7 @@ import com.palmergames.bukkit.towny.utils.NameUtil;
 import com.palmergames.bukkit.towny.utils.ResidentUtil;
 import com.palmergames.bukkit.towny.utils.SpawnUtil;
 import com.palmergames.bukkit.towny.war.flagwar.TownyWar;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarTimeUtil;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.Colors;
@@ -529,7 +530,7 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 
 					if (!resident.isMayor() && !resident.getTown().hasAssistant(resident))
 						throw new TownyException(TownySettings.getLangString("msg_peasant_right"));
-					
+
 					String[] newSplit = StringMgmt.remFirstArg(split);
 					String nationName = String.join("_", newSplit);
 					newNation(player, nationName, resident.getTown().getName(), false);
@@ -810,6 +811,13 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 			// Check if town is town is free to join.
 			if (!nation.isOpen())
 				throw new Exception(String.format(TownySettings.getLangString("msg_err_nation_not_open"), nation.getFormattedName()));
+
+			//Check that town is not neutral
+			if(TownySettings.getWarSiegeEnabled()
+				&& TownySettings.getWarSiegeTownNeutralityEnabled()
+				&& (town.isNeutral() || town.getDesiredNeutralityValue())) {
+				throw new TownyException(TownySettings.getLangString("msg_err_siege_war_neutral_town_cannot_join_nation"));
+			}
 			
 			if ((TownySettings.getNumResidentsJoinNation() > 0) && (town.getNumResidents() < TownySettings.getNumResidentsJoinNation()))
 				throw new Exception(String.format(TownySettings.getLangString("msg_err_not_enough_residents_join_nation"), town.getName()));
@@ -1275,13 +1283,20 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 	 */
 	public static void newNation(Player player, String name, String capitalName, boolean noCharge) {
 
-		com.palmergames.bukkit.towny.TownyUniverse universe = com.palmergames.bukkit.towny.TownyUniverse.getInstance();
+		TownyUniverse universe = TownyUniverse.getInstance();
 		try {
 
 			Town town = universe.getDataSource().getTown(capitalName);
 			if (town.hasNation())
 				throw new TownyException(TownySettings.getLangString("msg_err_already_nation"));
 
+			//Check that town is not neutral
+			if(TownySettings.getWarSiegeEnabled() 
+				&& TownySettings.getWarSiegeTownNeutralityEnabled()
+				&& (town.isNeutral() || town.getDesiredNeutralityValue())) {
+				throw new TownyException(TownySettings.getLangString("msg_err_siege_war_neutral_town_cannot_create_nation"));
+			}
+			
 			// Check the name is valid and doesn't already exist.
 			String filteredName;
 			try {
@@ -1330,7 +1345,7 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 
 	public void mergeNation(Player player, String name) throws TownyException {
 		
-		com.palmergames.bukkit.towny.TownyUniverse universe = com.palmergames.bukkit.towny.TownyUniverse.getInstance();
+		TownyUniverse universe = TownyUniverse.getInstance();
 		Nation nation = null;
 		Nation remainingNation = null;
 		try {
@@ -1373,6 +1388,24 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 			if (System.currentTimeMillis()-TownyWar.lastFlagged(town) < TownySettings.timeToWaitAfterFlag()) {
 				throw new TownyException(TownySettings.getLangString("msg_war_flag_deny_recently_attacked"));
 			}
+
+			if (TownySettings.getWarSiegeEnabled()) {
+
+				if (TownySettings.getWarSiegeTownLeaveDisabled() && !TownySettings.getWarSiegeRevoltEnabled())
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_town_voluntary_leave_impossible"));
+
+				if (town.isRevoltImmunityActive())
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_revolt_immunity_active"));
+
+				//Activate revolt immunity
+				SiegeWarTimeUtil.activateRevoltImmunityTimer(town);
+
+				TownyMessaging.sendGlobalMessage(
+					String.format(TownySettings.getLangString("msg_siege_war_revolt"),
+						town.getFormattedName(),
+						town.getMayor().getFormattedName(),
+						nation.getFormattedName()));
+			}
 			
 			nation.removeTown(town);
 			
@@ -1400,6 +1433,8 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 		if (split.length == 0)
 			try {
 				Resident resident = townyUniverse.getDataSource().getResident(player.getName());
+				double amountToRefund = Math.round(TownySettings.getNewNationPrice() * 0.01 * TownySettings.getWarSiegeNationCostRefundPercentageOnDelete());
+				TownyMessaging.sendErrorMsg(player, String.format(TownySettings.getLangString("msg_err_siege_war_delete_nation_warning"), TownyEconomyHandler.getFormattedBalance(amountToRefund)));
 				ConfirmationHandler.addConfirmation(resident, ConfirmationType.NATION_DELETE, null); // It takes the resident's town & nation, done finished
 				TownyMessaging.sendConfirmationMessage(player, null, null, null, null);
 			} catch (TownyException x) {
@@ -1532,6 +1567,14 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 		        	TownyMessaging.sendErrorMsg(player, String.format(TownySettings.getLangString("msg_err_not_enough_residents_join_nation"), town.getName()));
 		        	continue;
 		        }
+
+				//Check that town is not neutral
+				if(TownySettings.getWarSiegeEnabled()
+					&& TownySettings.getWarSiegeTownNeutralityEnabled()
+					&& (town.isNeutral() || town.getDesiredNeutralityValue())) {
+					TownyMessaging.sendErrorMsg(player,String.format(TownySettings.getLangString("msg_err_siege_war_neutral_town_cannot_invite_to_nation"), town.getName()));
+					continue;
+				}
 		        
 				if (TownySettings.getNationRequiresProximity() > 0) {
 					Coord capitalCoord = nation.getCapital().getHomeBlock().getCoord();
@@ -2612,7 +2655,7 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 
                 nation = resident.getTown().getNation();
                 notAffordMSG = TownySettings.getLangString("msg_err_cant_afford_tp");
-
+                
 				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
 				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
 				
@@ -2624,7 +2667,7 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
                 // split.length > 1
                 nation = townyUniverse.getDataSource().getNation(split[0]);
                 notAffordMSG = String.format(TownySettings.getLangString("msg_err_cant_afford_tp_nation"), nation.getName());
-
+                
 				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
 				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
 

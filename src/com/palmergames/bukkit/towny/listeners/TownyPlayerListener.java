@@ -26,11 +26,11 @@ import com.palmergames.bukkit.towny.permissions.TownyPerms;
 import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
 import com.palmergames.bukkit.towny.war.eventwar.WarUtil;
 import com.palmergames.bukkit.towny.war.flagwar.TownyWarConfig;
+import com.palmergames.bukkit.towny.war.siegewar.SiegeWarDeathController;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.Colors;
-
 import net.citizensnpcs.api.CitizensAPI;
-
+import com.palmergames.util.TimeMgmt;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -124,7 +124,18 @@ public class TownyPlayerListener implements Listener {
 		}
 		
 		Player player = event.getPlayer();
-		
+
+		//Set post-spawn damage immunity
+		if(TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegePostSpawnDamageImmunityEnabled()) {
+			try {
+				player.setInvulnerable(true);
+				Resident resident = TownyUniverse.getInstance().getDataSource().getResident(player.getName());
+				resident.setDamageImmunityEndTime(System.currentTimeMillis() + (int)(TownySettings.getWarSiegePostSpawnDamageImmunityMinimumDurationSeconds() * TimeMgmt.ONE_SECOND_IN_MILLIS));
+			} catch(Exception e) {
+				TownyMessaging.sendErrorMsg(e.getMessage());
+			}
+		}
+
 		if (!TownySettings.isTownRespawning())
 			return;
 		
@@ -881,7 +892,11 @@ public class TownyPlayerListener implements Listener {
 
 
 	/**
+<<<<<<< HEAD
 	 * onPlayerDieInTown
+=======
+	 * onPlayerDeath
+>>>>>>> siegewar
 	 * - Handles death events and the KeepInventory/KeepLevel options are being used.
 	 * 
 	 * @author - Articdive
@@ -889,7 +904,7 @@ public class TownyPlayerListener implements Listener {
 	 */
 	@EventHandler(priority = EventPriority.HIGHEST)
 	// Why Highest??, so that we are the last ones to check for if it keeps their inventory, and then have no problems with it.
-	public void onPlayerDieInTown(PlayerDeathEvent event) {
+	public void onPlayerDeath(PlayerDeathEvent event) {
 		boolean keepInventory = event.getKeepInventory();
 		boolean keepLevel = event.getKeepLevel();
 		Player player = event.getEntity();
@@ -905,6 +920,12 @@ public class TownyPlayerListener implements Listener {
 				}
 			}
 		}
+
+		//Check for siege-war related death effects
+		if(TownySettings.getWarSiegeEnabled()) {
+			SiegeWarDeathController.evaluateSiegePlayerDeath(player, event);
+		}
+
 		if (TownySettings.getKeepExperienceInTowns()) {
 			if (!keepLevel) { // If you don't keep your levels via any other plugin or the server, other events fire first, we just ignore it if they do save thier invs.
 				TownBlock tb = TownyAPI.getInstance().getTownBlock(deathloc);
@@ -987,7 +1008,7 @@ public class TownyPlayerListener implements Listener {
 			townyUniverse.getDataSource().saveResident(resident);
 		}		
 	}
-
+	
 	/**
 	 * Blocks jailed players using blacklisted commands.
 	 * @param event - PlayerCommandPreprocessEvent

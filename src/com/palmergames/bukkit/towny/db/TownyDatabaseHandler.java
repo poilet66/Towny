@@ -5,6 +5,7 @@ import com.palmergames.bukkit.towny.TownyEconomyHandler;
 import com.palmergames.bukkit.towny.TownyMessaging;
 import com.palmergames.bukkit.towny.TownySettings;
 import com.palmergames.bukkit.towny.TownyUniverse;
+import com.palmergames.bukkit.towny.TownyFormatter;
 import com.palmergames.bukkit.towny.event.DeleteNationEvent;
 import com.palmergames.bukkit.towny.event.DeletePlayerEvent;
 import com.palmergames.bukkit.towny.event.DeleteTownEvent;
@@ -32,6 +33,11 @@ import com.palmergames.bukkit.towny.object.WorldCoord;
 import com.palmergames.bukkit.towny.regen.PlotBlockData;
 import com.palmergames.bukkit.towny.regen.TownyRegenAPI;
 import com.palmergames.bukkit.towny.war.eventwar.WarSpoils;
+import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
+import com.palmergames.bukkit.towny.war.siegewar.locations.Siege;
+import com.palmergames.bukkit.towny.war.siegewar.locations.SiegeZone;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarRuinsUtil;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarTimeUtil;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.NameValidation;
 import org.bukkit.entity.Player;
@@ -42,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Map;
 
 /**
  * @author ElgarL
@@ -576,15 +583,28 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 
 	@Override
 	public void removeTown(Town town) {
-		
+		boolean delayFullRemoval = TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegeDelayFullTownRemoval();
+		removeTown(town, delayFullRemoval);
+	}
+
+	@Override
+	public void removeTown(Town town, boolean delayFullRemoval) {
+		if(delayFullRemoval) {
+			SiegeWarRuinsUtil.putTownIntoRuinedState(town, plugin);
+			return;
+		}
+
 		PreDeleteTownEvent preEvent = new PreDeleteTownEvent(town);
+
 		BukkitTools.getPluginManager().callEvent(preEvent);
-		
 		if (preEvent.isCancelled())
 			return;
-		
+
 		removeManyTownBlocks(town);
-		//removeTownBlocks(town);		
+		//removeTownBlocks(town);	
+
+		if(town.hasSiege())
+			removeSiege(town.getSiege());
 
 		List<Resident> toSave = new ArrayList<>(town.getResidents());
 		TownyWorld townyWorld = town.getWorld();
@@ -617,13 +637,13 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			}
 			saveResident(resident);
 		}
-		
+
 		// Look for residents inside of this town's jail and free them
 		for (Resident jailedRes : TownyUniverse.getInstance().getJailedResidentMap()) {
 			if (jailedRes.hasJailTown(town.getName())) {
-                jailedRes.setJailed(jailedRes, 0, town);
-                saveResident(jailedRes);
-            }
+				jailedRes.setJailed(jailedRes, 0, town);
+				saveResident(jailedRes);
+			}
 		}
 
 		if (TownyEconomyHandler.isActive())
@@ -639,13 +659,13 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			// Must already be removed
 		}
 		saveWorld(townyWorld);
-		
+
 		universe.getTownsTrie().removeKey(town.getName());
 		universe.getTownsMap().remove(town.getName().toLowerCase());
 		plugin.resetCache();
 		deleteTown(town);
 		saveTownList();
-		
+
 		BukkitTools.getPluginManager().callEvent(new DeleteTownEvent(town.getName()));
 	}
 
@@ -654,6 +674,8 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 
 		PreDeleteNationEvent preEvent = new PreDeleteNationEvent(nation.getName());
 		BukkitTools.getPluginManager().callEvent(preEvent);
+
+		Resident king = nation.getKing();
 		
 		if (preEvent.isCancelled())
 			return;
@@ -688,10 +710,33 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 		//Delete nation and save towns
 		deleteNation(nation);
 		List<Town> toSave = new ArrayList<>(nation.getTowns());
+
+		//Delete siegezones & save affected towns
+		List<SiegeZone> siegeZonesToDelete = new ArrayList<>(nation.getSiegeZones());
+		Siege siege;
+		for(SiegeZone siegeZone: siegeZonesToDelete) {
+			siege = siegeZone.getSiege();
+			siege.getSiegeZones().remove(nation); //Remove siegezone from siege
+			toSave.add(siegeZone.getDefendingTown());  //Prepare to save town
+			if(siege.getSiegeZones().size() == 0) {
+				//If this was the last siegezone in the siege, remove siege from town
+				siege.getDefendingTown().setSiege(null);
+				//If the siege was in progress, initiate siege immunity for the town
+				if(siege.getStatus() == SiegeStatus.IN_PROGRESS) {
+					siege.setActualEndTime(System.currentTimeMillis());
+					SiegeWarTimeUtil.activateSiegeImmunityTimer(siege.getDefendingTown(), siege);
+				}
+			}
+			deleteSiegeZone(siegeZone);
+		}
+
 		nation.clear();
 
 		universe.getNationsTrie().removeKey(nation.getName().toLowerCase());
 		universe.getNationsMap().remove(nation.getName().toLowerCase());
+		for(SiegeZone siegeZone: siegeZonesToDelete) {
+			universe.getSiegeZonesMap().remove(siegeZone.getName().toLowerCase());
+		}
 
 		for (Town town : toSave) {
 
@@ -713,6 +758,26 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 
 		plugin.resetCache();
 		saveNationList();
+		if(siegeZonesToDelete.size() >0)
+			saveSiegeZoneList();
+
+		//Refund some of the initial setup cost to the king
+		if(TownySettings.getWarSiegeEnabled()
+			&& TownySettings.isUsingEconomy()
+			&& TownySettings.getWarSiegeRefundInitialNationCostOnDelete()) {
+			try {
+				//Refund the king with some of the initial nation setup cost
+				double amountToRefund = Math.round(TownySettings.getNewNationPrice() * 0.01 * TownySettings.getWarSiegeNationCostRefundPercentageOnDelete());
+				king.getAccount().collect(amountToRefund, "Refund of Some of the Initial Nation Cost");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			TownyMessaging.sendGlobalMessage(
+				String.format(
+					TownySettings.getLangString("msg_siege_war_refund_initial_cost_on_nation_delete"),
+					king.getFormattedName(),
+					TownySettings.getWarSiegeNationCostRefundPercentageOnDelete() + "%"));
+		}
 
 		BukkitTools.getPluginManager().callEvent(new DeleteNationEvent(nation.getName()));
 	}
@@ -818,7 +883,13 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			 * and the file move command may fail.
 			 */
 			deleteTown(town);
-
+			
+			if(town.hasSiege()) {
+				for(SiegeZone siegeZone: new ArrayList<>(town.getSiege().getSiegeZones().values())) {
+					deleteSiegeZone(siegeZone);
+				}
+			}
+		
 			/*
 			 * Remove the old town from the townsMap
 			 * and rename to the new name
@@ -829,7 +900,19 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			universe.getTownsMap().put(filteredName.toLowerCase(), town);
 			universe.getTownsTrie().addKey(filteredName);
 			world.addTown(town);
-
+			
+			//Similarly move/rename siegezones
+			if(town.hasSiege()) {
+				String oldSiegeZoneName;
+				String newSiegeZoneName;
+				for (SiegeZone siegeZone : town.getSiege().getSiegeZones().values()) {
+					oldSiegeZoneName = SiegeZone.generateName(siegeZone.getAttackingNation().getName(), oldName);
+					newSiegeZoneName = siegeZone.getName();
+					universe.getSiegeZonesMap().remove(oldSiegeZoneName);
+					universe.getSiegeZonesMap().put(newSiegeZoneName.toLowerCase(), siegeZone);
+				}
+			}
+			
 			// If this was a nation capitol
 			if (isCapital) {
 				nation.setCapital(town);
@@ -873,7 +956,13 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 				}
 
 			saveTown(town);
+			for(SiegeZone siegeZone: town.getSiege().getSiegeZones().values()) {
+				saveSiegeZone(siegeZone);
+				saveNation(siegeZone.getAttackingNation());
+			}
+
 			saveTownList();
+			saveSiegeZoneList();
 			savePlotGroupList();
 			saveWorld(town.getWorld());
 
@@ -934,6 +1023,9 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			//Tidy up old files
 			deleteNation(nation);
 
+			for(SiegeZone siegeZone: new ArrayList<>(nation.getSiegeZones())) {
+				deleteSiegeZone(siegeZone);
+			}
 			/*
 			 * Remove the old nation from the nationsMap
 			 * and rename to the new name
@@ -944,6 +1036,16 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			nation.setName(filteredName);
 			universe.getNationsMap().put(filteredName.toLowerCase(), nation);
 			universe.getNationsTrie().addKey(filteredName);
+
+			//Similarly move/rename siegezones
+			String oldSiegeZoneName;
+			String newSiegeZoneName;
+			for(SiegeZone siegeZone: nation.getSiegeZones()) {
+				oldSiegeZoneName = SiegeZone.generateName(oldName, siegeZone.getDefendingTown().getName());
+				newSiegeZoneName = siegeZone.getName();
+				universe.getSiegeZonesMap().remove(oldSiegeZoneName);
+				universe.getSiegeZonesMap().put(newSiegeZoneName.toLowerCase(), siegeZone);
+			}
 
 			if (TownyEconomyHandler.isActive()) {
 				try {
@@ -962,7 +1064,13 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			}
 
 			saveNation(nation);
+			for(SiegeZone siegeZone: nation.getSiegeZones()) {
+				saveSiegeZone(siegeZone);
+				saveTown(siegeZone.getDefendingTown());
+			}
+
 			saveNationList();
+			saveSiegeZoneList();
 
 			//search and update all ally/enemy lists
 			Nation oldNation = new Nation(oldName);
@@ -1191,6 +1299,151 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			universe.getDataSource().saveNationList();
 			TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_del_nation"), name));
 			lock.unlock();
+		}
+	}
+	
+	@Override
+	public List<SiegeZone> getSiegeZones() {
+		return new ArrayList<>(universe.getSiegeZonesMap().values());
+	}
+
+	public void newSiegeZone(String siegeZoneName) throws AlreadyRegisteredException {
+		String[] townAndNationArray = SiegeZone.generateTownAndNationName(siegeZoneName);
+		newSiegeZone(townAndNationArray[0],townAndNationArray[1]);
+	}
+
+	@Override
+	public void newSiegeZone(String attackingNationName,String defendingTownName) throws AlreadyRegisteredException {
+
+		lock.lock();
+
+		try {
+			String siegeZoneName = SiegeZone.generateName(attackingNationName, defendingTownName);
+
+			if(universe.getSiegeZonesMap().containsKey(siegeZoneName.toLowerCase()))
+				throw new AlreadyRegisteredException("Siege Zone is already registered");
+
+			Town town = universe.getTownsMap().get(defendingTownName.toLowerCase());
+			Nation nation = universe.getNationsMap().get(attackingNationName.toLowerCase());
+			SiegeZone siegeZone = new SiegeZone(nation, town);
+
+			universe.getSiegeZonesMap().put(siegeZoneName.toLowerCase(), siegeZone);
+
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public SiegeZone getSiegeZone(String siegeZoneName) throws NotRegisteredException {
+		if(!universe.getSiegeZonesMap().containsKey(siegeZoneName.toLowerCase())) {
+			throw new NotRegisteredException("Siege Zone not found");
+		}
+		return universe.getSiegeZonesMap().get(siegeZoneName.toLowerCase());
+	}
+	
+	//Remove a particular siege, and all associated data
+	@Override
+	public void removeSiege(Siege siege) {
+		//Remove siege from town
+		siege.getDefendingTown().setSiege(null);
+
+		List<SiegeZone> siegeZonesToRemove = new ArrayList<>();
+		List<Nation> nationsToSave = new ArrayList<>();
+
+		//Calculate zones to remove and nations to save
+		for(Map.Entry<Nation,SiegeZone> entry: siege.getSiegeZones().entrySet()) {
+			siegeZonesToRemove.add(entry.getValue());
+			nationsToSave.add(entry.getKey());
+		}
+
+		//Remove siege zones from nations
+		for(SiegeZone siegeZone: siegeZonesToRemove) {
+			siegeZone.getAttackingNation().removeSiegeZone(siegeZone);
+		}
+
+		//Remove siege zones from universe
+		for(SiegeZone siegeZone: siegeZonesToRemove) {
+			universe.getSiegeZonesMap().remove(siegeZone.getName().toLowerCase());
+		}
+
+		//Save town
+		saveTown(siege.getDefendingTown());
+
+		//SaveNations
+		for(Nation nation: nationsToSave) {
+			saveNation(nation);
+		}
+
+		//Delete siege zone files
+		for(SiegeZone siegeZone: siegeZonesToRemove) {
+			deleteSiegeZone(siegeZone);
+		}
+		saveSiegeZoneList();
+	}
+
+
+	//Remove a particular siege, and all associated data
+	@Override
+	public void removeSiegeZone(SiegeZone siegeZone) {
+		//Remove siege zone from town
+		siegeZone.getDefendingTown().getSiege().getSiegeZones().remove(siegeZone.getAttackingNation());
+		//Remove siege zone from nation
+		siegeZone.getAttackingNation().removeSiegeZone(siegeZone);
+		//Remove siege zone from universe
+		universe.getSiegeZonesMap().remove(siegeZone.getName().toLowerCase());
+
+		//Save town
+		saveTown(siegeZone.getDefendingTown());
+		//SaveNation
+		saveNation(siegeZone.getAttackingNation());
+		//Delete siege zone file
+		deleteSiegeZone(siegeZone);
+
+		//Save siege zone list
+		saveSiegeZoneList();
+	}
+
+
+	@Override
+	public Set<String> getSiegeZonesKeys() {
+
+		return universe.getSiegeZonesMap().keySet();
+	}
+
+	@Override
+	public void removeTownFromNation(Towny plugin, Town town, Nation nation) {
+		boolean removeNation = false;
+
+		try {
+			nation.removeTown(town);
+		} catch(NotRegisteredException x) {
+			return;  //Town was already removed
+		} catch(EmptyNationException x) {
+			removeNation = true;  //Set flag to remove nation at end of this method
+		}
+
+		if(removeNation) {
+			removeNation(nation);
+			saveNationList();
+		} else {
+			saveNation(nation);
+			saveNationList();
+			plugin.resetCache();
+		}
+
+		saveTown(town);
+	}
+
+	@Override
+	public void addTownToNation(Towny plugin, Town town,Nation nation) {
+		try {
+			nation.addTown(town);
+			saveTown(town);
+			plugin.resetCache();
+			saveNation(nation);
+		} catch (AlreadyRegisteredException x) {
+			return;   //Town already in nation
 		}
 	}
 }

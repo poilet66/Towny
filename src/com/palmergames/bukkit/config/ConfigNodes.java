@@ -1256,6 +1256,11 @@ public enum ConfigNodes {
 			"economy.new_expand.price_new_town",
 			"250.0",
 			"# How much it costs to start a town."),
+	ECO_PRICE_RECLAIM_TOWN(
+			"economy.new_expand.price_reclaim_town",
+			"200.0",
+			"# How much it costs to reclaim a ruined town.",
+			"# This is only applicable if the delay-town-removal & allow-town-reclaim features are enabled."),
 	ECO_PRICE_OUTPOST(
 			"economy.new_expand.price_outpost",
 			"500.0",
@@ -1765,8 +1770,339 @@ public enum ConfigNodes {
 			"WOODEN_DOOR,ACACIA_DOOR,DARK_OAK_DOOR,JUNGLE_DOOR,BIRCH_DOOR,SPRUCE_DOOR,IRON_DOOR,CHEST,TRAPPED_CHEST,FURNACE,BURNING_FURNACE,DROPPER,DISPENSER,HOPPER,ENDER_CHEST,WHITE_SHULKER_BOX,ORANGE_SHULKER_BOX,MAGENTA_SHULKER_BOX,LIGHT_BLUE_SHULKER_BOX,YELLOW_SHULKER_BOX,LIME_SHULKER_BOX,PINK_SHULKER_BOX,GRAY_SHULKER_BOX,SILVER_SHULKER_BOX,CYAN_SHULKER_BOX,PURPLE_SHULKER_BOX,BLUE_SHULKER_BOX,BROWN_SHULKER_BOX,GREEN_SHULKER_BOX,RED_SHULKER_BOX,BLACK_SHULKER_BOX,NOTE_BLOCK,LEVER,STONE_PLATE,IRON_DOOR_BLOCK,WOOD_PLATE,JUKEBOX,DIODE_BLOCK_OFF,DIODE_BLOCK_ON,FENCE_GATE,GOLD_PLATE,IRON_PLATE,REDSTONE_COMPARATOR_OFF,REDSTONE_COMPARATOR_ON,BEACON",
 			"# A list of blocks that will not be exploded, mostly because they won't regenerate properly.",
 			"# These blocks will also protect the block below them, so that blocks like doors do not dupe themselves.",
-			"# Only under affect when explosions_break_blocks is true.");
+			"# Only under affect when explosions_break_blocks is true."),
 
+	WAR_SIEGE(
+			"war.siege",
+			"",
+			"############################################################",
+			"# +------------------------------------------------------+ #",
+			"# |                   Siege-War settings                 | #",
+			"# |                                                      | #",
+			"# |              Separate from other war system          | #",
+			"# |                                                      | #",
+			"# |  This war system is new/being trialled and           | #",
+			"# |  at present not fully supported by core Towny team.  | #",
+			"# |  In an emergency contact Goosius                     | #",
+			"# |  on the towny support discord channel                | #",
+			"# |  or email anytime to Goosius1@gmail.com              | #",
+			"# +------------------------------------------------------+ #",
+			"############################################################",
+			""),
+	//Switches
+	WAR_SIEGE_ENABLED(
+			"war.siege.switches.enabled",
+			"false",
+			"# If true, the Siege-War system is enabled.",
+			"# if false, the Siege-War system is disabled."),
+	WAR_SIEGE_ATTACK_ENABLED(
+			"war.siege.switches.attack_enabled",
+			"true",
+			"# If true, then nations can start sieges."),
+	WAR_SIEGE_ABANDON_ENABLED(
+			"war.siege.switches.abandon_enabled",
+			"true",
+			"# If true, then nations can abandon sieges."),
+	WAR_SIEGE_TOWN_SURRENDER_ENABLED(
+			"war.siege.switches.town_surrender_enabled",
+			"true",
+			"# If true, then a town can surrender if there is only 1 nation attacker."),
+	WAR_SIEGE_INVADE_ENABLED(
+			"war.siege.switches.invade_enabled",
+			"true",
+			"# If true, then a nation siege winner can invade the defeated town.",
+			"# This action will add the town to the nation"),
+	WAR_SIEGE_PLUNDER_ENABLED(
+			"war.siege.switches.plunder_enabled",
+			"true",
+			"# If true, then a nation siege winner can plunder the defeated town.",
+			"# This action will steal money from the town.",
+			"# If the town does not have sufficient funds, it will be ruined."),
+	WAR_SIEGE_TOWN_LEAVE_DISABLED(
+			"war.siege.switches.nation_leave_disabled",
+			"true",
+			"#. If true, then a town cannot leave a nation of its own accord. ",
+			"# However the nation can always kick."),
+	WAR_SIEGE_REVOLT_ENABLED(
+			"war.siege.switches.revolt_enabled",
+			"true",
+			"#. If true, then a town can 'revolt' against the nation and leave",
+			 "# Usually enabled in combination with WAR_SIEGE_TOWN_LEAVE_DISABLED"),
+	WAR_SIEGE_PVP_ALWAYS_ON_IN_BESIEGED_TOWNS(
+			"war.siege.switches.pvp_always_on_in_besieged_towns",
+			"true",
+			"# If true, then pvp is always set to on during sieges",
+			"# Pvp returns to its previous setting when the siege ends"),
+	WAR_SIEGE_CLAIMING_DISABLED_NEAR_SIEGE_ZONES(
+			"war.siege.switches.claiming_disabled_near_siege_zones",
+			"true",
+			"# If true, then land cannot be claimed near a siege zone.",
+			"# This setting is generally considered critical, otherwise one side could wall off the siege zone."),
+	WAR_SIEGE_DELAY_FULL_TOWN_REMOVAL(
+			"war.siege.switches.delay_full_town_removal",
+			"true",
+			"# If this is true, then if a town falls, it remains in a 'ruined' state for a time.",
+			"# In this state, the town cannot be claimed, but can be looted",
+			"# This setting is generally considered critical,",
+			"# because it prevents mayors from avoiding sieges/occupation by ",
+		    "# deleting then quickly recreating their town."),
+	WAR_SIEGE_RUINS_RECLAIM_ENABLED(
+			"war.siege.switches.ruins_reclaim_enabled",
+			"true",
+			"# If this is true, then after a town has been ruined for a certain (configurable) duration,",
+			"# it can then be reclaimed by any resident who runs /t reclaim, and pays the required price (configured in the eco section in this file)"),
+	WAR_SIEGE_ATTACKER_SPAWN_INTO_BESIEGED_TOWN_DISABLED(
+			"war.siege.switches.attacker_spawn_into_besieged_town_disabled",
+			"true",
+			"# If this is true, then siege attackers are prevented from spawning into towns they are attacking.",
+			"# If this setting is false, then the town spawn becomes a siege front, where attackers might be expected to appear."),
+	WAR_SIEGE_REFUND_INITIAL_NATION_COST_ON_DELETE(
+			"war.siege.switches.refund_initial_nation_cost_on_delete",
+			"true",
+			"# If this is true, then when a king deletes the nation,",
+			"# they will be refunded the initial new nation cost.",
+			"# This prevents the new nation cost becoming a sunken cost due to invasion."),
+	WAR_SIEGE_TOWN_NEUTRALITY_ENABLED(
+			"war.siege.switches.town_neutrality_enabled",
+			"true",
+			"# If this is true, then a town can toggle neutrality,",
+			"# After a countdown (usually in days), the new town status is confirmed.",
+			"# A neutral town is protected from siege-forced-pvp, plunder, and occupation taxes.",
+		    "# It can be captured, adding to an invading nation's town count, but the occupation is in-name only.",
+			"# This option may improve the server-play experience for: ",
+			"# - Towns who are (currently) in an otherwise-hopeless strategic position e.g. completely surrounded by much more powerful enemies,",
+			"# - Towns who are building strength and preparing for war, but not yet ready to handle plunder costs",
+			"# - Towns who prefer to influence world events and wars via subtle diplomatic methods rather than military strength"),
+	WAR_SIEGE_PILLAGING_ENABLED(
+			"war.siege.switches.pillaging_enabled",
+			"true",
+			"# If this is true, then pillaging is enabled,",
+			"# Pillaging represents attackers raiding the countryside around a besieged town.",
+			"# If this is enabled, then with each siege war tick, attacking soldiers steal a small amount from the town bank.",
+			"# The pillaged amount does not vary with the number of attacking soldiers at the banner.",
+			"# Rather it is divided up between all the attacking soldiers.",
+			"# ",
+			"# This feature is highly recommended, because:",
+		    "# 1. Attackers are motivated to invade territory by receiving immediate financial rewards.", 
+		    "#    Otherwise, attacking soldiers at the banner are toiling for a distant reward, and the reward. if it arrives after a long siege. will only be received by the mayor or king anyway.",
+			"# 2. Defenders are motivated to fight because of immediate financial danger.",
+			"#    Otherwise, there is no urgent motivation for defenders to come out and fight, and defenders will often be better off waiting passively for enemy soldiers to leave the area, coming out only then to gain timed points and ultimately win."),
+	WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_ENABLED(
+			"war.siege.switches.post_spawn_damage_immunity_enabled",
+			"true",
+			"# If this value is true, then spawn camping is prevented/reduced by the following automatic measure: ",
+			"# - After spawning, a player will be immune to damage (and cannot damage entities) for a short time (typically less than a minute).",
+			"# - Thus, during a siege, even if the enemy has breached the town walls, a spawning player has time to get to (or create) a safe location."),
+	WAR_SIEGE_BESIEGED_TOWN_RECRUITMENT_DISABLED(
+			"war.siege.switches.besieged_town_recruitment_disabled",
+			"true",
+			"# If this value is true, then a town under active siege cannot recruit new residents.",
+			"#  This setting is recommended because it helps discourage 'fake' sieges just for the purpose of of gifting immunity."),
+	WAR_SIEGE_BESIEGED_TOWN_CLAIMING_DISABLED(
+			"war.siege.switches.besieged_town_claiming_disabled",
+			"true",
+			"# If this value is true, then a town under active siege cannot claim new plots.",
+			"#  This setting is recommended because it helps discourage 'fake' sieges just for the purpose of of gifting immunity."),
+	WAR_SIEGE_PENALTY_POINTS_ENABLED(
+			"war.siege.switches.penalty_points_enabled",
+			"true",
+			"# If this value is true, then multiple siege-death-point avoidance exploits are automatically prevented.",
+			"# The feature works by applying a siege point penalty in any scenario where siege-death points could be avoided.",
+			"# For example, if a soldier in a siege simply left their town just before dying, they would avoid sp loss.",
+			"# As per the wiki, nations & allies are thus recommended to never reduce armed forces if they have active sieges.",
+			"# This setting is recommended to save moderators from extra manual monitoring and enforcement efforts."),
+	WAR_SIEGE_KEEP_INVENTORY_ON_SIEGE_DEATH(
+			"war.siege.switches.keep_inventory_on_siege_death",
+			"true",
+			"# If this setting is true, then it applies to military ranked players. (soldier/guard etc.)",
+			"# If such a player dies in the death-zone of a siege they are involved in, they keep inventory.",
+			"# The setting greatly reduces the material cost of wars, because valuable equipment is not lost.",
+			"# Underdog sides in particularly, have significantly less to lose by counter attacking.",
+			"# The setting causes battles to be more aggressive/immediate.", 
+			"# The setting is recommended."),
+
+	//Monetary Values
+	WAR_SIEGE_ATTACKER_COST_UPFRONT_PER_PLOT(
+			"war.siege.money.attacker_cost_upfront_per_plot",
+			"20.0",
+			"# This value represents the siege deposit paid by the attacker (aka warchest).",
+			"# This value is recovered by the siege winner, whether attack or defender."),
+	WAR_SIEGE_ATTACKER_PLUNDER_AMOUNT_PER_PLOT(
+			"war.siege.money.attacker_plunder_amount_per_plot",
+			"10.0",
+			"# This is the amount plundered by the attacker is a siege is successful.",
+			"# It is recommended to be lower than the maximum pillage value. A ratio of about 1:3 is recommended"),
+	WAR_SIEGE_MAXIMUM_PILLAGE_AMOUNT_PER_PLOT(
+			"war.siege.money.maximum_pillage_amount_per_plot",
+			"30.0",
+			"# This value specifies the maximum amount which can be pillaged from a town during a siege.",
+			"# It is recommended to be higher than the maximum plunder value. A ratio of about 1:3 is recommended"),
+	WAR_SIEGE_PILLAGE_AMOUNT_PER_PLOT(
+			"war.siege.money.pillage_amount_per_plot",
+			"0.02",
+			"# This value specifies how much attacking soldiers near the siege-banner will steal from the town during each siege-war-tick.",
+			"# The value should be high enough to motivate the defender to come out and fight.",
+			"# The value should be low enough that the pillage cap (previous config) is only hit late in the siege (if at all).",
+			"# An starting configuration might be calculated after assuming a total of about 10 hours of pillaging over a full 3 day siege",
+			"# ",
+			"# Example:  Value 0.02. A nation attacks a size 100 town.",
+			"# The attacking soldiers will pillage 2 gold per 20 seconds, 6 per minute. 360 per hour, and 3600 over 10 hours."),
+	WAR_SIEGE_NATION_COST_REFUND_PERCENTAGE_ON_DELETE(
+			"war.siege.money.nation_cost_refund_percentage_on_delete",
+			"80.0",
+			"# The value specifies what proportion of the initial nation cost is refunded," +
+			"# When the nation is deleted or defeated."),
+
+	//Non-Monetary Quantities
+	WAR_SIEGE_MAX_ACTIVE_SIEGE_ATTACKS_PER_NATION(
+		"war.siege.quantities.max_active_siege_attacks_per_nation",
+		"999",
+		"# The value specifies the maximum number of active/in-progress sieges allowed per nation." +
+			"# A low setting will generally reduce the aggression level on the server.",
+			"# A low setting will also rebalance the system in favour of smaller nations.",
+		 	"# This is because it will prevent larger nations from conducting as many sieges as their resources would otherwise allow."),
+
+	//Times
+	WAR_SIEGE_TIMER_TICK_INTERVAL_SECONDS(
+			"war.siege.times.timer_interval_seconds",
+			"20",
+			"# The time in seconds for each siegewar timer tick.",
+			"# It is recommended to put this between 10-30, not too low to cause lag, not too high that players have to wait unacceptably long for siege points."),
+	WAR_SIEGE_MAX_HOLDOUT_TIME_HOURS(
+			"war.siege.times.max_holdout_time_hours",
+			"72",
+			"# The maximum duration a town can hold out against a siege.",
+			"# If the value is too high, regular players may be unsatisfied that sieges take too long.",
+			"# If the value is too low, casual players may be unsatisfied that ",
+		    "#    they are unable to contribute to sieges, especially those involving their own town/nation"),
+	WAR_SIEGE_MIN_SIEGE_DURATION_BEFORE_SURRENDER_HOURS(
+			"war.siege.times.min_siege_duration_before_surrender_hours",
+			"24",
+			"# The minimum duration of a siege before a town can surrender.",
+			"# This setting is important because it prevents a 'quick surrender' by the defender",
+			"# - which could leave the attacker with no 'aftermath' time in which to execute invade or plunder actions."),
+	WAR_SIEGE_MIN_SIEGE_DURATION_BEFORE_ABANDON_HOURS(
+			"war.siege.times.min_siege_duration_before_abandon_hours",
+			"24",
+			"# The minimum duration of a siege before an attacking nation can abandon.",
+			"# This setting is important to prevent an attacker and defender colluding to establish a suitable siege immunity time."),
+	WAR_SIEGE_SIEGE_IMMUNITY_TIME_NEW_TOWN_HOURS(
+			"war.siege.times.siege_immunity_time_new_town_hours",
+			"72",
+			"# This value determines how long a town is safe from sieges, after the town is founded.",
+			"# A high value allows more time to fortify new towns, but community engagement by mayors will be slower.",
+			"# A low value allows less time to fortify new towns, but community engagement by mayors will be faster."),
+	WAR_SIEGE_SIEGE_IMMUNITY_TIME_MODIFIER(
+			"war.siege.times.siege_immunity_time_modifier",
+			"2.5",
+			"# This value determines how long a town is safe from sieges, after a siege finishes.",
+			"# The actual cooldown time will be the length of the previous siege, multiplied by this modifer.",
+			"# A high value makes sieges less frequent. Suitable for moderately-aggressive servers",
+			"# A low value makes sieges more frequent. Suitable for highly aggressive servers."),
+	WAR_SIEGE_REVOLT_IMMUNITY_TIME_HOURS(
+			"war.siege.times.revolt_immunity_time_hours",
+			"168",
+			"# This value determines how long a town must wait before it can revolt against an occupying nation nation. The immunity time gets set to the given value if a town is captured, or if it revolts.",
+			"# If the value is too high, towns will be frustrated that it is too difficult to revolt against an occupier.",
+			"# If the value is too low, nations will find it difficult to hold territory due to constant revolts."),
+	WAR_SIEGE_RUINS_REMOVAL_DELAY_HOURS(
+			"war.siege.times.ruins_removal_delay_hours",
+			"72",
+			"# This setting determines the maximum delay between a town being ruined, and final deletion."),
+	WAR_SIEGE_MINIMUM_RUINS_DURATION_HOURS(
+			"war.siege.times.minimum_ruins_duration_hours",
+			"24",
+			"# This value determines the minimum duration for which a town must lie in ruins,",
+			"# before it can be reclaimed by a resident."),
+	WAR_SIEGE_ZONE_MAXIMUM_SCORING_DURATION_MINUTES(
+			"war.siege.times.zone_maximum_scoring_duration_minutes",
+			"15",
+			"# This setting determines the maximum duration a player can continue to score siege points, while remaining in the siege zone.",
+			"# After this time, to resume scoring points, the player will need to exit then re-enter the siege zone.",
+			"# The setting is an important anti-afk'ing feature."),
+	WAR_SIEGE_TOWN_NEUTRALITY_CONFIRMATION_REQUIREMENT_DAYS(
+			"war.siege.times.town_neutrality_confirmation_requirement_days",
+			"7",
+			"# This value determines how long it takes to confirm a town neutrality status change.",
+			"# It is recommended to be relatively high, ",
+		    "# for use by genuinely neutral towns, not just towns which wish to quickly toggle on/off to reduce war costs."),
+	WAR_SIEGE_RUINS_REMOVALS_TICK_INTERVAL_MINUTES(
+			"war.siege.times.ruins_removals_tick_interval_minutes",
+			"30",
+			"# This value determines the interval between ruins removals ticks, in which ruins are checked for deletion."),
+	WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_MINIMUM_DURATION_SECONDS(
+			"war.siege.times.post_spawn_damage_immunity_minimum_duration_seconds",
+			"30",
+			"# This value determines the minimum duration after spawning in which a player is immune to damage (and cannot damage entities).",
+			"# The actual value may be larger for each individual respawn - the max additional time is approximately equal to the siege war timer tick interval.",
+			"# Thus by default the actual value will be 30-60 seconds"),
+
+	//Distances
+	WAR_SIEGE_CLAIM_DISABLE_DISTANCE_BLOCKS(
+			"war.siege.distances.claim_disable_distance_blocks",
+			"100",
+			"# This is the distance in regular blocks from a siege banner in which claims are disabled.",
+			"# It is recommended to have this over 60, or else siege-zone-walling may not be adequetely discouraged."),
+	WAR_SIEGE_MAX_ALLOWED_BANNER_TO_TOWN_DOWNWARD_ELEVATION_DIFFERENCE(
+			"war.siege.distances.max_allowed_banner_to_town_downward_elevation_difference",
+			"15",
+			"# This is the max allowed elevation difference downward from siege banner to town.",
+			 "# There is no limit on the upward difference.",
+		     "# This setting prevents the banner being placed on a platform high in the air."),
+	WAR_SIEGE_ZONE_DEATH_RADIUS_BLOCKS(
+			"war.siege.distances.zone_death_radius_blocks",
+			"100",
+			"# If a siege zone participant dies within this distance of the siege banner,",
+			"# their opponents are awarded siege points."),
+	
+	//Siege points
+	WAR_SIEGE_POINTS_FOR_ATTACKER_OCCUPATION(
+			"war.siege.scoring.points_for_attacker_occupation",
+			"10",
+			"# This setting determines the number of siege points awarded to an occupying attacker.",
+			"# The points are awarded if a player remains within a town-block length of the siege banner for: ",
+			"# WAR_SIEGE_ZONE_OCCUPATION_SCORING_TIME_REQUIREMENT_SECONDS "),
+	WAR_SIEGE_POINTS_FOR_DEFENDER_OCCUPATION(
+			"war.siege.scoring.points_for_defender_occupation",
+			"10",
+			"# This setting determines the number of siege points awarded to an occupying defender.",
+			"# The points are awarded if a player remains within a town-block length of the siege banner for: ",
+			"# WAR_SIEGE_ZONE_OCCUPATION_SCORING_TIME_REQUIREMENT_SECONDS "),
+	WAR_SIEGE_POINTS_FOR_ATTACKER_DEATH(
+			"war.siege.scoring.points_for_attacker_death",
+			"100",
+			"# This setting determines the number of siege points awarded if an attacker dies.",
+			"# The points are awarded if the player dies within the configured siege zone death radius.",
+			"# The points are given to the defending town.",
+			"# The higher this value is, compared to the occupation value, the more cautious and tactical your battles will be.",
+		    "# The lower this value is, compared to the occupation value, the more aggressive and immediate your battles will be."),
+	WAR_SIEGE_POINTS_FOR_DEFENDER_DEATH(
+			"war.siege.scoring.points_for_defender_death",
+			"100",
+			"# This setting determines the number of siege points awarded if a defender dies.",
+			"# The points are awarded if the player dies within the configured siege zone death radius.",
+			"# The points are given to all attacking nations.",
+			"# The higher this value is, compared to the occupation value, the more cautious and tactical your battles will be.",
+			"# The lower this value is, compared to the occupation value, the more aggressive and immediate your battles will be."),
+	WAR_SIEGE_MAX_PLAYERS_PER_SIDE_FOR_TIMED_POINTS(
+			"war.siege.scoring.max_players_per_side_for_timed_points",
+			"3",
+			"# This setting determines the maximum number of players at a time, per side, who can score timed siege points.",
+			"# If the value is too high, then too many players may be drawn into siege zone banner occupation.",
+			"# - This takes time from other activities e.g. building, trading.",
+			"# - Also siege-zone occupation can sometimes be boring if one side is avoiding meeting the other in direct combat.",
+			"# If the value is too low, then too few players can be involved in siege zone banner occupation.",
+			"# - Thus, some players in a town, nation, or allies may not be able to contribute as much to wars as they might wish."),
+	WAR_SIEGE_PERCENTAGE_POINTS_GAIN_DECREASE_PER_1000_ADVANTAGE(
+			"war.siege.scoring.percentage_points_gain_decrease_per_1000_advantage",
+			"0",
+			"# This setting gives an disadvantage to larger/more active towns and nations",
+			"# It works by decreasing all siege point gains for a side, depending on how far the side is already ahead."),
+	WAR_SIEGE_PERCENTAGE_POINTS_GAIN_INCREASE_PER_1000_DISADVANTAGE(
+			"war.siege.scoring.percentage_points_gain_increase_per_1000_disadvantage",
+			"0",
+			"# This setting gives an advantage to smaller/less active towns and nations",
+			"# It works by increasing all siege point gains for a side, depending on how far the side is already behind.");
 
 	private final String Root;
 	private final String Default;

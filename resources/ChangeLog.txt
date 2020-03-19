@@ -4264,6 +4264,9 @@ v0.92.0.11:
   - Fix a couple missing child nodes for permissions in the plugin.yml.
 0.96.0.0:
   - Bump version number for release.
+  - Update bukkit api to 1.15.2.
+
+
   - Special Release for 1.13.2 Servers preceding 0.96.0.0
     - Some "Required Config Changes" will not be necessary for this release.
     - Reverted ProtectionRegenTask class to previous version found in 1.13 branch (API Incompatibility)

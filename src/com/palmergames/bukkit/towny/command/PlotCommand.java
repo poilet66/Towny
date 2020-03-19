@@ -35,6 +35,7 @@ import com.palmergames.bukkit.towny.tasks.CooldownTimerTask.CooldownType;
 import com.palmergames.bukkit.towny.utils.AreaSelectionUtil;
 import com.palmergames.bukkit.towny.utils.NameUtil;
 import com.palmergames.bukkit.towny.utils.OutpostUtil;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarRuinsUtil;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.Colors;
@@ -247,6 +248,10 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 			}
 
 			try {
+				if (SiegeWarRuinsUtil.isPlayerTownRuined(player)) {
+					throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_use_command_because_town_ruined"));
+				}
+
 				if (split[0].equalsIgnoreCase("claim")) {
 
 					if (!townyUniverse.getPermissionSource().testPermission(player, PermissionNodes.TOWNY_COMMAND_PLOT_CLAIM.getNode()))
@@ -1358,7 +1363,7 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 				}
 
 				townBlock.setPlotObjectGroup(newGroup);
-
+				
 				// Check if a plot price is available.
 				if (!(townBlock.getPlotPrice() < 0)) {
 					newGroup.addPlotPrice(townBlock.getPlotPrice());

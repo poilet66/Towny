@@ -3,7 +3,7 @@
 ___
 
 <p><img align=right src="https://user-images.githubusercontent.com/879756/65964696-19d6b300-e423-11e9-9cb0-d193225ee40f.png">
-I took over from ElgarL after MC 1.8 was released. Past developers have included: Shadeness, FuzzieWuzzie, ElgarL. 
+I took over from ElgarL after MC 1.8 was released. Past developers have included: Shadeness, FuzzieWuzzie, ElgarL.
 With help coming from other developers from time to time including dumptruckman, ole8pie, SwearWord, gravypod, andrewyunt and more.
 
 Towny is one of the oldest still-in-development plugins for Minecraft. It was created by Shadeness for the now-defunct server platform called hMod.
@@ -30,15 +30,15 @@ ___
 | MC 1.7.10 | [0.92.0.0 for 1.7.10](https://www.dropbox.com/s/vmf2g5bj7ab4coo/Towny_Advanced%200.92.0.0%20-%20MC%201.7.10.zip?dl=0) |
 | MC 1.6.4 | [0.88.0.0 for 1.6.4](https://www.dropbox.com/s/5n9r60ivldh5i8f/Towny_Advanced%200.88.0.0%20%281.6.4%29.zip?dl=0) |
 | MC 1.5.2 | [0.88.0.0 for 1.5.2](https://www.dropbox.com/s/euydq4qsljheoms/Towny_Advanced%200.88.0.0%20%281.5.2%29.zip?dl=0) |
-| MC 1.2.5 | [0.82.0.0](https://www.dropbox.com/s/xstn1vdexxc1k5q/Towny_Advanced%200.82.0.0%20for%201.2.5.zip?dl=0) | 
+| MC 1.2.5 | [0.82.0.0](https://www.dropbox.com/s/xstn1vdexxc1k5q/Towny_Advanced%200.82.0.0%20for%201.2.5.zip?dl=0) |
 
 ___
 
 ### Staying up to date
 <p><img align=right src="https://user-images.githubusercontent.com/879756/65964779-3a067200-e423-11e9-9928-938b976af2c2.gif" height="155">
-    
+
 Now that all Release builds and Development builds are being made available here on github's [Releases](https://github.com/TownyAdvanced/Towny/releases) tab I am recommending that server admins "watch" Towny on github. Just click the watch button in the upper right and select "Releases Only".
-    
+
 Alternatively, if you [watch the resource](https://www.spigotmc.org/resources/towny-advanced.72694/watch) on Spigot you will be notified on that website when a new build is out.
 </p>
 
@@ -81,7 +81,7 @@ For building, open your terminal / command prompt and navigate to the Towny Dire
 
 - **Maven**
 
-    - Run `mvn clean package` to generate the plugin in the `target` directory, within the Towny folder. 
+    - Run `mvn clean package` to generate the plugin in the `target` directory, within the Towny folder.
     - Developers who wish to use the Towny API in their plugins may read [the following instructions on adding Towny via a maven pom.xml.](https://github.com/TownyAdvanced/Towny/wiki/TownyAPI#getting-started-with-towny-and-your-ide)
 
 - **Ant** (_Deprecated_)

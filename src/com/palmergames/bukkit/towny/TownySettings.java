@@ -192,6 +192,9 @@ public class TownySettings {
 //
 //		if (level != null) return level;
 //		return 0;
+		if(town.isRuined())
+			return 0;
+
 		int n = town.getNumResidents();
 		for (Integer level : configTownLevel.keySet())
 			if (n >= level)
@@ -1190,6 +1193,11 @@ public class TownySettings {
 	public static double getNewTownPrice() {
 
 		return getDouble(ConfigNodes.ECO_PRICE_NEW_TOWN);
+	}
+
+	public static double getReclaimTownPrice() {
+
+		return getDouble(ConfigNodes.ECO_PRICE_RECLAIM_TOWN);
 	}
 
 	public static double getNewNationPrice() {
@@ -2908,17 +2916,216 @@ public class TownySettings {
 	public static int timeToWaitAfterFlag() {
 		return getInt(ConfigNodes.WAR_ENEMY_TIME_TO_WAIT_AFTER_FLAGGED);
 	}
-	
+
 	public static boolean isFlaggedInteractionTown() {
 		return getBoolean(ConfigNodes.WAR_ENEMY_PREVENT_INTERACTION_WHILE_FLAGGED);
 	}
-	
+
 	public static boolean isFlaggedInteractionNation() {
 		return getBoolean(ConfigNodes.WAR_ENEMY_PREVENT_NATION_INTERACTION_WHILE_FLAGGED);
 	}
-	
+
 	public static boolean isNotificationsTownNamesVerbose() {
 		return getBoolean(ConfigNodes.NOTIFICATION_TOWN_NAMES_ARE_VERBOSE);
+	}
+
+	public static boolean getWarSiegeEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_ENABLED);
+	}
+
+	public static boolean getWarSiegeAttackEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_ATTACK_ENABLED);
+	}
+
+	public static boolean getWarSiegeAbandonEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_ABANDON_ENABLED);
+	}
+
+	public static boolean getWarSiegeSurrenderEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_TOWN_SURRENDER_ENABLED);
+	}
+
+	public static boolean getWarSiegeInvadeEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_INVADE_ENABLED);
+	}
+
+	public static boolean getWarSiegePlunderEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_PLUNDER_ENABLED);
+	}
+
+	public static boolean getWarSiegeRevoltEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_REVOLT_ENABLED);
+	}
+
+	public static boolean getWarSiegeTownLeaveDisabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_TOWN_LEAVE_DISABLED);
+	}
+
+	public static boolean getWarSiegePvpAlwaysOnInBesiegedTowns() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_PVP_ALWAYS_ON_IN_BESIEGED_TOWNS);
+	}
+	
+	public static boolean getWarSiegeDelayFullTownRemoval() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_DELAY_FULL_TOWN_REMOVAL);
+	}
+
+	public static boolean getWarSiegeClaimingDisabledNearSiegeZones() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_CLAIMING_DISABLED_NEAR_SIEGE_ZONES);
+	}
+
+	public static int getWarSiegeClaimDisableDistanceBlocks() {
+		return getInt(ConfigNodes.WAR_SIEGE_CLAIM_DISABLE_DISTANCE_BLOCKS);
+	}
+
+	public static int getWarSiegeMaxAllowedBannerToTownDownwardElevationDifference() {
+		return getInt(ConfigNodes.WAR_SIEGE_MAX_ALLOWED_BANNER_TO_TOWN_DOWNWARD_ELEVATION_DIFFERENCE);
+	}
+
+	public static double getWarSiegeRuinsRemovalDelayHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_RUINS_REMOVAL_DELAY_HOURS);
+	}
+
+	public static double getWarSiegeAttackerCostUpFrontPerPlot() {
+		return getDouble(ConfigNodes.WAR_SIEGE_ATTACKER_COST_UPFRONT_PER_PLOT);
+	}
+
+	public static long getWarSiegeTimerIntervalSeconds() {
+		return getInt(ConfigNodes.WAR_SIEGE_TIMER_TICK_INTERVAL_SECONDS);
+	}
+
+	public static double getWarSiegeSiegeImmunityTimeNewTownsHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_SIEGE_IMMUNITY_TIME_NEW_TOWN_HOURS);
+	}
+	public static double getWarSiegeSiegeImmunityTimeModifier() {
+		return getDouble(ConfigNodes.WAR_SIEGE_SIEGE_IMMUNITY_TIME_MODIFIER);
+	}
+
+	public static double getWarSiegeRevoltImmunityTimeHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_REVOLT_IMMUNITY_TIME_HOURS);
+	}
+
+	public static double getWarSiegeAttackerPlunderAmountPerPlot() {
+		return getDouble(ConfigNodes.WAR_SIEGE_ATTACKER_PLUNDER_AMOUNT_PER_PLOT);
+	}
+
+	public static double getWarSiegeMaxHoldoutTimeHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_MAX_HOLDOUT_TIME_HOURS);
+	}
+	
+	public static double getWarSiegeMinSiegeDurationBeforeSurrenderHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_MIN_SIEGE_DURATION_BEFORE_SURRENDER_HOURS);
+	}
+
+	public static double getWarSiegeMinSiegeDurationBeforeAbandonHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_MIN_SIEGE_DURATION_BEFORE_ABANDON_HOURS);
+	}
+
+	public static int getWarSiegePointsForAttackerOccupation() {
+		return getInt(ConfigNodes.WAR_SIEGE_POINTS_FOR_ATTACKER_OCCUPATION);
+	}
+
+	public static int getWarSiegePointsForDefenderOccupation() {
+		return getInt(ConfigNodes.WAR_SIEGE_POINTS_FOR_DEFENDER_OCCUPATION);
+	}
+
+	public static int getWarSiegePointsForAttackerDeath() {
+		return getInt(ConfigNodes.WAR_SIEGE_POINTS_FOR_ATTACKER_DEATH);
+	}
+
+	public static int getWarSiegePointsForDefenderDeath() {
+		return getInt(ConfigNodes.WAR_SIEGE_POINTS_FOR_DEFENDER_DEATH);
+	}
+	
+	public static int getWarSiegeZoneDeathRadiusBlocks() {
+		return getInt(ConfigNodes.WAR_SIEGE_ZONE_DEATH_RADIUS_BLOCKS);
+	}
+
+	public static double getWarSiegeZoneMaximumScoringDurationMinutes() {
+		return getDouble(ConfigNodes.WAR_SIEGE_ZONE_MAXIMUM_SCORING_DURATION_MINUTES);
+	}
+
+	public static int getWarSiegeMaxPlayersPerSideForTimedPoints() {
+		return getInt(ConfigNodes.WAR_SIEGE_MAX_PLAYERS_PER_SIDE_FOR_TIMED_POINTS);
+	}
+
+	public static boolean getWarSiegeAttackerSpawnIntoBesiegedTownDisabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_ATTACKER_SPAWN_INTO_BESIEGED_TOWN_DISABLED);
+	}
+	
+	public static double getWarSiegeNationCostRefundPercentageOnDelete() {
+		return getDouble(ConfigNodes.WAR_SIEGE_NATION_COST_REFUND_PERCENTAGE_ON_DELETE);
+	}
+
+	public static int getWarSiegeMaxActiveSiegeAttacksPerNation() {
+		return getInt(ConfigNodes.WAR_SIEGE_MAX_ACTIVE_SIEGE_ATTACKS_PER_NATION);
+	}
+
+	public static boolean getWarSiegeRefundInitialNationCostOnDelete() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_REFUND_INITIAL_NATION_COST_ON_DELETE);
+	}
+
+	public static boolean getWarSiegeTownNeutralityEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_TOWN_NEUTRALITY_ENABLED);
+	}
+
+	public static int getWarSiegeTownNeutralityConfirmationRequirementDays() {
+		return getInt(ConfigNodes.WAR_SIEGE_TOWN_NEUTRALITY_CONFIRMATION_REQUIREMENT_DAYS);
+	}
+
+	public static boolean getWarSiegePillagingEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_PILLAGING_ENABLED);
+	}
+
+	public static double getWarSiegePillageAmountPerPlot() {
+		return getDouble(ConfigNodes.WAR_SIEGE_PILLAGE_AMOUNT_PER_PLOT);
+	}
+
+	public static double getWarSiegeRuinsRemovalsTickIntervalMinutes() {
+		return getDouble(ConfigNodes.WAR_SIEGE_RUINS_REMOVALS_TICK_INTERVAL_MINUTES);
+	}
+
+	public static boolean getWarSiegePostSpawnDamageImmunityEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_ENABLED);
+	}
+
+	public static int getWarSiegePostSpawnDamageImmunityMinimumDurationSeconds() {
+		return getInt(ConfigNodes.WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_MINIMUM_DURATION_SECONDS);
+	}
+
+	public static boolean getWarSiegeRuinsReclaimEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_RUINS_RECLAIM_ENABLED);
+	}
+
+	public static double getWarSiegeMinimumRuinsDurationHours() {
+		return getDouble(ConfigNodes.WAR_SIEGE_MINIMUM_RUINS_DURATION_HOURS);
+	}
+
+	public static double getWarSiegeMaximumPillageAmountPerPlot() {
+		return getDouble(ConfigNodes.WAR_SIEGE_MAXIMUM_PILLAGE_AMOUNT_PER_PLOT);
+	}
+
+	public static int getWarSiegePercentagePointsGainDecreasePer1000Advantage() {
+		return getInt(ConfigNodes.WAR_SIEGE_PERCENTAGE_POINTS_GAIN_DECREASE_PER_1000_ADVANTAGE);
+	}
+
+	public static int getWarSiegePercentagePointsGainIncreasePer1000Disadvantage() {
+		return getInt(ConfigNodes.WAR_SIEGE_PERCENTAGE_POINTS_GAIN_INCREASE_PER_1000_DISADVANTAGE);
+	}
+
+	public static boolean getWarSiegeBesiegedTownRecruitmentDisabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_BESIEGED_TOWN_RECRUITMENT_DISABLED);
+	}
+
+	public static boolean getWarSiegeBesiegedTownClaimingDisabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_BESIEGED_TOWN_CLAIMING_DISABLED);
+	}
+
+	public static boolean getWarSiegePenaltyPointsEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_PENALTY_POINTS_ENABLED);
+	}
+
+	public static boolean getWarSiegeKeepInventoryOnSiegeDeath() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_KEEP_INVENTORY_ON_SIEGE_DEATH);
 	}
 }
 
