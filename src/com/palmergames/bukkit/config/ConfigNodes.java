@@ -719,14 +719,13 @@ public enum ConfigNodes {
 			"[ /]"),
 	FILTERS_REGEX_NAME_CHECK_REGEX(
 			"filters_colour_chat.regex.name_check_regex",
-			"^[a-zA-Z0-9._\\[\\]-]*$"),
+			"^[\\P{M}\\p{M}*+a-zA-Z0-9._\\[\\]-]*$"),
 	FILTERS_REGEX_STRING_CHECK_REGEX(
 			"filters_colour_chat.regex.string_check_regex",
 			"^[a-zA-Z0-9 \\s._\\[\\]\\#\\?\\!\\@\\$\\%\\^\\&\\*\\-\\,\\*\\(\\)\\{\\}]*$"),
 	FILTERS_REGEX_NAME_REMOVE_REGEX(
 			"filters_colour_chat.regex.name_remove_regex",
-			"[^a-zA-Z0-9\\&._\\[\\]-]"),
-
+			"[^\\P{M}\\p{M}*+a-zA-Z0-9\\&._\\[\\]-]"),
 	FILTERS_MODIFY_CHAT("filters_colour_chat.modify_chat", "", ""),
 	FILTERS_MAX_NAME_LGTH(
 			"filters_colour_chat.modify_chat.max_name_length",
@@ -971,8 +970,8 @@ public enum ConfigNodes {
 			"# This setting only applies to servers running spigot, paper or bungeecord.",
 			"# On servers using craftbukkit.jar the notifications will always appear in the chat.",
 			"# When set to false the notifications will appear in the chat rather than the action bar."),
-
-
+	NOTIFICATION_ACTIONBAR_DURATION("notification.notification_actionbar_duration", "15",
+		"# This settings set the duration the actionbar (The text above the inventory bar) lasts in seconds"),
 	FLAGS_DEFAULT(
 			"default_perm_flags",
 			"",
@@ -1831,8 +1830,15 @@ public enum ConfigNodes {
 	WAR_SIEGE_PVP_ALWAYS_ON_IN_BESIEGED_TOWNS(
 			"war.siege.switches.pvp_always_on_in_besieged_towns",
 			"true",
-			"# If true, then pvp is always set to on during sieges",
-			"# Pvp returns to its previous setting when the siege ends"),
+			"# If true, then town pvp is always set to on during sieges.",
+			"# The town pvp flag returns to its previous value when the siege ends."),
+	WAR_SIEGE_EXPLOSIONS_ALWAYS_ON_IN_BESIEGED_TOWNS(
+			"war.siege.switches.explosions_always_on_in_besieged_towns",
+			"false",
+			"# If true, then town explosions are always set to on during sieges.",
+			"# The town explosions flag returns to its previous value when the siege ends.",
+			"# The setting is false by default, because SiegeWar is designed to be minimally-destructive.",
+			"# The setting is only recommended for use in combination with a block regeneration feature."),
 	WAR_SIEGE_CLAIMING_DISABLED_NEAR_SIEGE_ZONES(
 			"war.siege.switches.claiming_disabled_near_siege_zones",
 			"true",
@@ -1920,6 +1926,20 @@ public enum ConfigNodes {
 			"# Underdog sides in particularly, have significantly less to lose by counter attacking.",
 			"# The setting causes battles to be more aggressive/immediate.", 
 			"# The setting is recommended."),
+	WAR_SIEGE_TACTICAL_VISIBILITY_ENABLED(
+			"war.siege.switches.tactical_visibility_enabled",
+			"true",
+			"# If this setting is true, then tactical visibility is enabled",
+			"# PREREQUISITES: ",
+			"# 1. You must have deployed a dynmap jar containing support for tactical visibility.",
+			"# 2. In your dynmap config, tactical-invisibility must be enable.",
+			"# 3. In your dynmap config, it is recommended to turn off all other player invisibility switches.",
+			"# ",
+			"# This feature changes how player visibility works on the dynmap, as follows:",
+			"# * King or General - Always visible on map.",
+			"# * Player with shield or compass in off-hand - Hidden on map.",
+			"# * Player affected by invisibility potion - Hidden on map.",
+			"# * Any other player - Visible on map."),
 
 	//Monetary Values
 	WAR_SIEGE_ATTACKER_COST_UPFRONT_PER_PLOT(
@@ -2073,7 +2093,14 @@ public enum ConfigNodes {
 			"100",
 			"# If a siege zone participant dies within this distance of the siege banner,",
 			"# their opponents are awarded siege points."),
-	
+	WAR_SIEGE_LEADERSHIP_AURA_RADIUS_BLOCKS(
+		"war.siege.distances.leadership_aura_radius_blocks",
+			"50",
+			"# This setting determines the size of the 'Military Leadership Aura'.",
+			"# The aura emanates from kings, generals, and captains.",
+			"# The aura decreases death point losses for nearby nation/allied soldiers in a siege.",
+			"# The aura increases death point gains for nearby enemy soldiers in a siege."),
+
 	//Siege points
 	WAR_SIEGE_POINTS_FOR_ATTACKER_OCCUPATION(
 			"war.siege.scoring.points_for_attacker_occupation",
@@ -2121,7 +2148,16 @@ public enum ConfigNodes {
 			"war.siege.scoring.percentage_points_gain_increase_per_1000_disadvantage",
 			"0",
 			"# This setting gives an advantage to smaller/less active towns and nations",
-			"# It works by increasing all siege point gains for a side, depending on how far the side is already behind.");
+			"# It works by increasing all siege point gains for a side, depending on how far the side is already behind."),
+	WAR_SIEGE_POINTS_PERCENTAGE_ADJUSTMENT_FOR_LEADER_PROXIMITY(
+			"war.siege.scoring.percentage_adjustment_for_leader_proximity",
+			"10",
+			"# If a friendly military leader is nearby when a soldier dies in a siege, then points loss is reduced by this percentage.",
+			"# If an enemy military leader is nearby when a soldier dies in a siege, then points loss is increased by this percentage."),
+	WAR_SIEGE_POINTS_PERCENTAGE_ADJUSTMENT_FOR_LEADER_DEATH(
+			"war.siege.scoring.percentage_adjustment_for_leader_death",
+			"50",
+			"# If a military leader dies in a siege, then points loss in increased by this percentage.");
 
 	private final String Root;
 	private final String Default;

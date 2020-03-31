@@ -11,7 +11,7 @@ public class TownSpawnEvent extends PlayerTeleportEvent {
 	
 	Town fromTown;
 	private Town toTown;
-	
+
 	public TownSpawnEvent(Player player, Location from, Location to) {
 		super(player, from, to);
 		

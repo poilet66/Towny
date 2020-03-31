@@ -11,7 +11,7 @@ public class NationSpawnEvent extends PlayerTeleportEvent {
 	
 	private Nation toNation;
 	private Nation fromNation;
-	
+
 	public NationSpawnEvent(Player player, Location from, Location to) {
 		super(player, from, to);
 

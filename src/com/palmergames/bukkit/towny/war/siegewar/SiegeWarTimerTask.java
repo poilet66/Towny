@@ -19,6 +19,7 @@ import com.palmergames.bukkit.towny.war.siegewar.timeractions.DefenderWin;
 import com.palmergames.bukkit.towny.war.siegewar.timeractions.RemovePostSpawnDamageImmunity;
 import com.palmergames.bukkit.towny.war.siegewar.timeractions.RemoveRuinedTowns;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarBlockUtil;
+import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarDynmapUtil;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarMoneyUtil;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarPointsUtil;
 import com.palmergames.bukkit.util.BukkitTools;
@@ -55,7 +56,7 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 	@Override
 	public void run() {
 		if (TownySettings.getWarSiegeEnabled()) {
-			
+
 			evaluateSiegeZones();
 
 			evaluateSieges();
@@ -63,6 +64,18 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 			evaluateRuinsRemovals();
 
 			evaluatePostSpawnDamageImmunityRemovals();
+
+			evaluateTacticalVisibility();
+		}
+	}
+
+	/**
+	 * Evaluate the visibility of players on the dynmap
+	 * when using the 'tactical visibility' feature
+	 */
+	private void evaluateTacticalVisibility() {
+		if(TownySettings.getWarSiegeTacticalVisibilityEnabled()) {
+			SiegeWarDynmapUtil.evaluateTacticalVisibilityOfPlayers();
 		}
 	}
 
@@ -71,6 +84,7 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 	 */
 	private void evaluateSiegeZones() {
 		TownyUniverse universe = TownyUniverse.getInstance();
+		universe.clearPillagingPlayers();;
 		for(SiegeZone siegeZone: universe.getDataSource().getSiegeZones()) {
 			try {
 				evaluateSiegeZone(siegeZone);
@@ -227,6 +241,11 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 			}
 		}
 
+		//Record pillaging players (for tactical hiding usage)
+		if(TownySettings.getWarSiegeTacticalVisibilityEnabled()) {
+			universe.addPillagingPlayers(pillagingPlayers);
+		}
+
 		//Pillage
 		double maximumPillageAmount = TownySettings.getWarSiegeMaximumPillageAmountPerPlot() * siegeZone.getDefendingTown().getTownBlocks().size();
 		if(TownySettings.getWarSiegePillagingEnabled()
@@ -299,7 +318,7 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 		if (playerScoreTimeMap.containsKey(player)) {
 			
 			//Player must still be in zone
-			if (!SiegeWarPointsUtil.isPlayerInSiegePointZone(player, siegeZone)) {
+			if (!SiegeWarPointsUtil.isPlayerInTimedPointZone(player, siegeZone)) {
 				playerScoreTimeMap.remove(player);
 				siegeZone.getPlayerAfkTimeMap().remove(player);
 				return false;
@@ -342,7 +361,7 @@ public class SiegeWarTimerTask extends TownyTimerTask {
 		} else {
 
 			//Player must be in zone
-			if (!SiegeWarPointsUtil.isPlayerInSiegePointZone(player, siegeZone)) {
+			if (!SiegeWarPointsUtil.isPlayerInTimedPointZone(player, siegeZone)) {
 				return false;
 			}
 
