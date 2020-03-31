@@ -2661,25 +2661,28 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 
                 nation = resident.getTown().getNation();
                 notAffordMSG = TownySettings.getLangString("msg_err_cant_afford_tp");
-                
+
 				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
 				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
 				
 				if (nationSpawnEvent.isCancelled()) {
+					TownyMessaging.sendErrorMsg(player, nationSpawnEvent.getCancelMessage());
 					return;
 				}
-				
+
 			} else {
                 // split.length > 1
                 nation = townyUniverse.getDataSource().getNation(split[0]);
                 notAffordMSG = String.format(TownySettings.getLangString("msg_err_cant_afford_tp_nation"), nation.getName());
-                
+
 				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
 				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
-				
+
 				if (nationSpawnEvent.isCancelled()) {
+					TownyMessaging.sendErrorMsg(player, nationSpawnEvent.getCancelMessage());
 					return;
 				}
+
 			}
             
 			SpawnUtil.sendToTownySpawn(player, split, nation, notAffordMSG, false, SpawnType.NATION);
