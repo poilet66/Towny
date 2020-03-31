@@ -2668,18 +2668,7 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
 				if (nationSpawnEvent.isCancelled()) {
 					return;
 				}
-
-<<<<<<< HEAD
-=======
-				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
-				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
 				
-				if (nationSpawnEvent.isCancelled()) {
-					TownyMessaging.sendErrorMsg(player, nationSpawnEvent.getCancelMessage());
-					return;
-				}
-
->>>>>>> siegewar
 			} else {
                 // split.length > 1
                 nation = townyUniverse.getDataSource().getNation(split[0]);
@@ -2687,22 +2676,10 @@ public class NationCommand extends BaseCommand implements CommandExecutor {
                 
 				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
 				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
-
-<<<<<<< HEAD
+				
 				if (nationSpawnEvent.isCancelled()) {
 					return;
 				}
-
-=======
-				NationSpawnEvent nationSpawnEvent = new NationSpawnEvent(player, player.getLocation(), nation.getNationSpawn());
-				Bukkit.getPluginManager().callEvent(nationSpawnEvent);
-
-				if (nationSpawnEvent.isCancelled()) {
-					TownyMessaging.sendErrorMsg(player, nationSpawnEvent.getCancelMessage());
-					return;
-				}
-
->>>>>>> siegewar
 			}
             
 			SpawnUtil.sendToTownySpawn(player, split, nation, notAffordMSG, false, SpawnType.NATION);

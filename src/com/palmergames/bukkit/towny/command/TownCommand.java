@@ -2701,6 +2701,7 @@ public class TownCommand extends BaseCommand implements CommandExecutor, TabComp
 				Bukkit.getPluginManager().callEvent(townSpawnEvent);
 
 				if (townSpawnEvent.isCancelled()) {
+					TownyMessaging.sendErrorMsg(player, townSpawnEvent.getCancelMessage());
 					return;
 				}
 
@@ -2713,6 +2714,7 @@ public class TownCommand extends BaseCommand implements CommandExecutor, TabComp
 				Bukkit.getPluginManager().callEvent(townSpawnEvent);
 				
 				if (townSpawnEvent.isCancelled()) {
+					TownyMessaging.sendErrorMsg(player, townSpawnEvent.getCancelMessage());
 					return;
 				}
 

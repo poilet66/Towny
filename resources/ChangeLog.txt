@@ -4264,6 +4264,16 @@ v0.92.0.11:
   - Fix a couple missing child nodes for permissions in the plugin.yml.
 0.96.0.0:
   - Bump version number for release.
+<<<<<<< HEAD
+=======
+  - Special Release for 1.13.2 Servers preceding 0.96.0.0
+    - Some "Required Config Changes" will not be necessary for this release.
+    - Reverted ProtectionRegenTask class to previous version found in 1.13 branch (API Incompatibility)
+      - This may result in run-time bugs! I am not familiar with this class, or the methods that call it.
+    - Changed to full-path import for ActionType in TownyPlayerListener.
+    - Reverted Nether portal fix introduced in 0.95.2.22 (PR #3745)
+      - Incompatible with 1.13, admins are advised to just ban abusers.
+>>>>>>> 0.96.1.0for1.13.2
   - Update bukkit api to 1.15.2.
 0.96.0.1:
   - Add nation tab-complete to `/n online`, courtesy of silverwolfg11 with PR #3797.
@@ -4271,12 +4281,20 @@ v0.92.0.11:
   - API: Add Calculation Events, courtesy of Valentina_pro with PR #3794.
     - TownUpkeepCalculationEvent - get/set upkeep per town.
     - TownUpkeepPenalityCalculationEvent - get/set upkeep overclaim penalty per town.
+<<<<<<< HEAD
     - NationUpkeepCalculationEvent - get/set upkeep per nation.
+=======
+    - NationUpkeepCalculationEvent - get/set upkeep per nation.  
+>>>>>>> 0.96.1.0for1.13.2
     - Allows third party plugins to completely override all town and nation upkeeps.
     - Closes #3781.
 0.96.0.2:
   - Change metrics chart to report only in lower-case.
+<<<<<<< HEAD
   - API: Add gettable Nation to NationTagChangeEvent, courtesy of Travja with PR #3808.
+=======
+  - API: Add gettable Nation to NationTagChangeEvent, courtesy of Travja with PR #3808. 
+>>>>>>> 0.96.1.0for1.13.2
   - Fix resident tab-complete for nation rank manipulation, courtesy of silverwolfg11 with PR #3807.
   - Fix plot toggle mobs tab-complete, courtesy of silverwolfg11 with PR #3811.
   - Fix untranslated "town" & "nation" seen in the withdraw and deposit commands feeback.
@@ -4299,7 +4317,11 @@ v0.92.0.11:
     - Swap out the List version of towns in TownyWorld for a HashMap, for faster loading of TownBlocks
   - Fix pvp disabled worlds still be affected with recent change to CombatUtil#preventPVP.
   - Add space after commas between nation/town ranks, courtesy of jkmartindale with PR #3820.
+<<<<<<< HEAD
     - See in the /resident status page.
+=======
+    - See in the /resident status page. 
+>>>>>>> 0.96.1.0for1.13.2
 0.96.0.4:
   - Make /t outpost outpostname case insensitive.
     - Fixes part of #3826.
@@ -4334,3 +4356,6 @@ v0.92.0.11:
   - Handle invalid arguments for townyadmin economy cmds, courtesy of silverwolfg11 with PR #3849.
 0.96.1.0:
   - Bump version for release.
+0.96.1.0 for MC 1.13.2:
+  - Bump version number for release.
+  - A special backport of Towny 0.96.1.0 for Minecraft 1.13.2, courtesy of TheFlagCourier with PR #3850.
