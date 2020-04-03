@@ -957,9 +957,12 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 				}
 
 			saveTown(town);
-			for(SiegeZone siegeZone: town.getSiege().getSiegeZones().values()) {
-				saveSiegeZone(siegeZone);
-				saveNation(siegeZone.getAttackingNation());
+
+			if(town.hasSiege()) {
+				for (SiegeZone siegeZone : town.getSiege().getSiegeZones().values()) {
+					saveSiegeZone(siegeZone);
+					saveNation(siegeZone.getAttackingNation());
+				}
 			}
 
 			saveTownList();
