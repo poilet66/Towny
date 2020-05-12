@@ -120,7 +120,7 @@ public class SQL_Schema {
 		columns.add("`attackingNation` mediumtext NOT NULL");
 		columns.add("`defendingTown` mediumtext NOT NULL");
 		columns.add("`flagLocation` mediumtext NOT NULL");
-		columns.add("`siegeStatus` mediumtext");
+		columns.add("`siegeStatus` mediumtext NOT NULL");
 		columns.add("`siegePoints` mediumtext NOT NULL");
 		columns.add("`warChestAmount` float NOT NULL");
 		columns.add("`townPlundered` bool NOT NULL DEFAULT '0'");
@@ -129,7 +129,7 @@ public class SQL_Schema {
 		columns.add("`scheduledEndTime` BIGINT");
 		columns.add("`actualEndTime` BIGINT");
 		columns.add("`totalPillageAmount` float NOT NULL");
-
+		columns.add("`residentTotalTimedPointsMap` mediumtext NOT NULL");
 		return columns;
 	}
 	
@@ -180,9 +180,9 @@ public class SQL_Schema {
 		columns.add("`revoltImmunityEndTime` BIGINT");
 		columns.add("`siegeImmunityEndTime` BIGINT");
 		columns.add("`occupied` bool NOT NULL DEFAULT '0'");
-		columns.add("`neutral` bool NOT NULL DEFAULT '0'");
-		columns.add("`desiredNeutralityValue` bool NOT NULL DEFAULT '0'");
-		columns.add("`neutralityChangeConfirmationCounterDays` int(11) DEFAULT 0");
+		columns.add("`peaceful` bool NOT NULL DEFAULT '0'");
+		columns.add("`desiredPeacefulnessValue` bool NOT NULL DEFAULT '0'");
+		columns.add("`peacefulnessChangeConfirmationCounterDays` int(11) DEFAULT 0");
 		return columns;
 	}
 
@@ -210,7 +210,10 @@ public class SQL_Schema {
 		columns.add("`title` mediumtext");
 		columns.add("`surname` mediumtext");
 		columns.add("`protectionStatus` mediumtext");
+		columns.add("`postTownLeavePeacefulEnabled` bool NOT NULL DEFAULT '0'");
+		columns.add("`postTownLeavePeacefulHoursRemaining` int(11) DEFAULT 0");
 		columns.add("`friends` mediumtext");
+		columns.add("`nationRefundAmount` int(11) DEFAULT 0");
 		columns.add("`metadata` text DEFAULT NULL");
 		return columns;
 	}

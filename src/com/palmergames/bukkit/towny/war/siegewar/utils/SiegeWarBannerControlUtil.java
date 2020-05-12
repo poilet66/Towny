@@ -56,6 +56,12 @@ public class SiegeWarBannerControlUtil {
 				if(siege.getBannerControlSessions().containsKey(player))
 					continue; // Player already has a control session
 
+				if(siege.getResidentTotalTimedPointsMap().containsKey(resident)
+					&& siege.getResidentTotalTimedPointsMap().get(resident) > TownySettings.getWarSiegeMaxTimedPointsPerPlayerPerSiege()) {
+					TownyMessaging.sendMsg(resident, String.format(TownySettings.getLangString("msg_siege_war_resident_exceeded_max_timed_points"), siege.getDefendingTown().getFormattedName()));
+					continue; //Player has exceeded max timed pts for this siege
+				}
+
 				residentTown = resident.getTown();
 				if(residentTown == siege.getDefendingTown()
 					&& universe.getPermissionSource().has(resident, PermissionNodes.TOWNY_TOWN_SIEGE_POINTS)) {
@@ -140,8 +146,8 @@ public class SiegeWarBannerControlUtil {
 		if (!resident.hasTown())
 			return false; //Player is a nomad
 
-		if(resident.getTown().isOccupied() || resident.getTown().isNeutral())
-			return false; // Player is from occupied or neutral town
+		if(resident.getTown().isOccupied())
+			return false; // Player is from occupied town
 
 		if(player.isDead())
 			return false; // Player is dead
@@ -178,12 +184,18 @@ public class SiegeWarBannerControlUtil {
 					if(bannerControlSession.getSiegeSide() == siege.getBannerControllingSide()) {
 						//The player contributes to ongoing banner control
 						siege.addBannerControllingResident(bannerControlSession.getResident());
+						if(!siege.getResidentTotalTimedPointsMap().containsKey(bannerControlSession.getResident())) {
+							siege.getResidentTotalTimedPointsMap().put(bannerControlSession.getResident(), 0);
+						}
 						TownyMessaging.sendMsg(bannerControlSession.getPlayer(), TownySettings.getLangString("msg_siege_war_banner_control_session_success"));
 					} else {
 						//The player gains banner control for their side
 						siege.clearBannerControllingResidents();
 						siege.setBannerControllingSide(bannerControlSession.getSiegeSide());
 						siege.addBannerControllingResident(bannerControlSession.getResident());
+						if(!siege.getResidentTotalTimedPointsMap().containsKey(bannerControlSession.getResident())) {
+							siege.getResidentTotalTimedPointsMap().put(bannerControlSession.getResident(), 0);
+						}
 						//Inform player
 						TownyMessaging.sendMsg(bannerControlSession.getPlayer(), TownySettings.getLangString("msg_siege_war_banner_control_session_success"));
 						//Inform town/nation participants
@@ -209,18 +221,19 @@ public class SiegeWarBannerControlUtil {
 			return;
 
 		//Award siege points and pillage
-		int siegePointsAdjustment;
+		int siegePoints;
 		switch(siege.getBannerControllingSide()) {
 			case ATTACKERS:
 				//Adjust siege points
-				siegePointsAdjustment = siege.getBannerControllingResidents().size() * TownySettings.getWarSiegePointsForAttackerOccupation();
-				siegePointsAdjustment = SiegeWarPointsUtil.adjustSiegePointGainForCurrentSiegePointBalance(siegePointsAdjustment, siege);
-				siege.adjustSiegePoints(siegePointsAdjustment);
+				siegePoints = siege.getBannerControllingResidents().size() * TownySettings.getWarSiegePointsForAttackerOccupation();
+				siegePoints = SiegeWarPointsUtil.adjustSiegePointsForPopulationQuotient(true, siegePoints, siege);
+				siege.adjustSiegePoints(siegePoints);
+				siege.increaseResidentTotalTimedPoints(siege.getBannerControllingResidents(), Math.abs(siegePoints));
 				//Pillage
 				double maximumPillageAmount = TownySettings.getWarSiegeMaximumPillageAmountPerPlot() * siege.getDefendingTown().getTownBlocks().size();
 				if(TownySettings.getWarSiegePillagingEnabled()
 					&& TownySettings.isUsingEconomy()
-					&& !siege.getDefendingTown().isNeutral()
+					&& !siege.getDefendingTown().isPeaceful()
 					&& siege.getDefendingTown().getSiege().getTotalPillageAmount() < maximumPillageAmount)
 				{
 					SiegeWarMoneyUtil.pillageTown(siege.getBannerControllingResidents(), siege.getAttackingNation(), siege.getDefendingTown());
@@ -230,9 +243,10 @@ public class SiegeWarBannerControlUtil {
 			break;
 			case DEFENDERS:
 				//Adjust siege points
-				siegePointsAdjustment = -(siege.getBannerControllingResidents().size() * TownySettings.getWarSiegePointsForDefenderOccupation());
-				siegePointsAdjustment = SiegeWarPointsUtil.adjustSiegePointGainForCurrentSiegePointBalance(siegePointsAdjustment, siege);
-				siege.adjustSiegePoints(siegePointsAdjustment);
+				siegePoints = -(siege.getBannerControllingResidents().size() * TownySettings.getWarSiegePointsForDefenderOccupation());
+				siegePoints = SiegeWarPointsUtil.adjustSiegePointsForPopulationQuotient(false, siegePoints, siege);
+				siege.adjustSiegePoints(siegePoints);
+				siege.increaseResidentTotalTimedPoints(siege.getBannerControllingResidents(), Math.abs(siegePoints));
 				//Save siege zone
 				TownyUniverse.getInstance().getDataSource().saveSiege(siege);
 			break;
@@ -240,16 +254,30 @@ public class SiegeWarBannerControlUtil {
 			break;
 		}
 
-		//Remove banner control if all players on the list are logged out
-		boolean allBannerControllingPlayersOffline = true;
+		//Check if any residents have exceeded max timed pts/player
+		if(siege.getBannerControllingSide() != SiegeSide.NOBODY) {
+			for(Resident resident: siege.getBannerControllingResidents()) {
+				if(siege.getResidentTotalTimedPointsMap().containsKey(resident)
+					&& siege.getResidentTotalTimedPointsMap().get(resident) > TownySettings.getWarSiegeMaxTimedPointsPerPlayerPerSiege()) {
+					//Resident has exceeded max timed pts/player. Remove from banner control
+					siege.removeBannerControllingResident(resident);
+					TownyMessaging.sendMsg(resident, String.format(TownySettings.getLangString("msg_siege_war_resident_exceeded_max_timed_points"), siege.getDefendingTown().getFormattedName()));
+				}
+			}
+		}
+
+		//Remove banner control if 
+		//1. All players on the list are logged out, or
+		//2. The list is now empty
+		boolean bannerControlLost = true;
 		for(Resident resident: siege.getBannerControllingResidents()) {
 			Player player = TownyAPI.getInstance().getPlayer(resident);
 			if(player != null) {
-				allBannerControllingPlayersOffline = false;
+				bannerControlLost = false;
 				break;
 			}
 		}
-		if(allBannerControllingPlayersOffline) {
+		if(bannerControlLost) {
 			siege.setBannerControllingSide(SiegeSide.NOBODY);
 		}
 	}

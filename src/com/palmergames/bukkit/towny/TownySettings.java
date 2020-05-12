@@ -2,6 +2,7 @@ package com.palmergames.bukkit.towny;
 
 import com.palmergames.bukkit.config.CommentedConfiguration;
 import com.palmergames.bukkit.config.ConfigNodes;
+import com.palmergames.bukkit.towny.event.NationBonusCalculationEvent;
 import com.palmergames.bukkit.towny.event.NationUpkeepCalculationEvent;
 import com.palmergames.bukkit.towny.event.TownUpkeepCalculationEvent;
 import com.palmergames.bukkit.towny.event.TownUpkeepPenalityCalculationEvent;
@@ -798,66 +799,6 @@ public class TownySettings {
 			newConfig.set(ConfigNodes.LEVELS_NATION_LEVEL.getRoot(), config.get(ConfigNodes.LEVELS_NATION_LEVEL.getRoot()));
 	}
 
-	public static String[] getRegistrationMsg(String name) {
-
-		return parseString(String.format(getLangString("MSG_REGISTRATION"), name));
-	}
-
-	public static String[] getNewTownMsg(String who, String town) {
-
-		return parseString(String.format(getLangString("MSG_NEW_TOWN"), who, town));
-	}
-
-	public static String[] getNewNationMsg(String who, String nation) {
-
-		return parseString(String.format(getLangString("MSG_NEW_NATION"), who, nation));
-	}
-
-	public static String[] getJoinTownMsg(String who) {
-
-		return parseString(String.format(getLangString("MSG_JOIN_TOWN"), who));
-	}
-
-	public static String[] getJoinNationMsg(String who) {
-
-		return parseString(String.format(getLangString("MSG_JOIN_NATION"), who));
-	}
-
-	public static String[] getNewMayorMsg(String who) {
-
-		return parseString(String.format(getLangString("MSG_NEW_MAYOR"), who));
-	}
-
-	public static String[] getNewKingMsg(String who, String nation) {
-
-		return parseString(String.format(getLangString("MSG_NEW_KING"), who, nation));
-	}
-
-	public static String[] getJoinWarMsg(TownyObject obj) {
-
-		return parseString(String.format(getLangString("MSG_WAR_JOIN"), obj.getName()));
-	}
-
-	public static String[] getWarTimeEliminatedMsg(String who) {
-
-		return parseString(String.format(getLangString("MSG_WAR_ELIMINATED"), who));
-	}
-
-	public static String[] getWarTimeForfeitMsg(String who) {
-
-		return parseString(String.format(getLangString("MSG_WAR_FORFEITED"), who));
-	}
-
-	public static String[] getWarTimeLoseTownBlockMsg(WorldCoord worldCoord, String town) {
-
-		return parseString(String.format(getLangString("MSG_WAR_LOSE_BLOCK"), worldCoord.toString(), town));
-	}
-
-	public static String[] getWarTimeScoreMsg(Town town, int n) {
-
-		return parseString(String.format(getLangString("MSG_WAR_SCORE"), town.getName(), n));
-	}
-	
 	//Need other languages Methods
 	public static String[] getWarTimeScoreNationEliminatedMsg(Town town, int n, Nation fallenNation) {
 
@@ -873,10 +814,10 @@ public class TownySettings {
 
 		String townBlockName = "";
 		try {
-			Town fallenTown = ((TownBlock)fallenTownBlock).getTown();
-			townBlockName = "[" + fallenTown.getName() + "](" + ((TownBlock)fallenTownBlock).getCoord().toString() + ")";
+			Town fallenTown = fallenTownBlock.getTown();
+			townBlockName = "[" + fallenTown.getName() + "](" + fallenTownBlock.getCoord().toString() + ")";
 		} catch (NotRegisteredException e) {
-			townBlockName = "(" + ((TownBlock)fallenTownBlock).getCoord().toString() + ")";
+			townBlockName = "(" + fallenTownBlock.getCoord().toString() + ")";
 		}
 		return parseString(String.format(getLangString("MSG_WAR_SCORE_TOWNBLOCK_ELIM"), town.getName(), n, townBlockName));
 	}
@@ -1144,11 +1085,7 @@ public class TownySettings {
 		} else
 			n += town.getNumResidents() * ratio;
 
-		if (town.hasNation())
-			try {
-				n += (Integer) getNationLevel(town.getNation()).get(TownySettings.NationLevel.TOWN_BLOCK_LIMIT_BONUS);
-			} catch (NotRegisteredException e) {
-			}
+		n += getNationBonusBlocks(town);
 
 		return n;
 	}
@@ -1172,8 +1109,10 @@ public class TownySettings {
 	}
 
 	public static int getNationBonusBlocks(Nation nation) {
-
-		return (Integer) getNationLevel(nation).get(TownySettings.NationLevel.TOWN_BLOCK_LIMIT_BONUS);
+		int bonusBlocks = (Integer) getNationLevel(nation).get(TownySettings.NationLevel.TOWN_BLOCK_LIMIT_BONUS);
+		NationBonusCalculationEvent calculationEvent = new NationBonusCalculationEvent(nation, bonusBlocks);
+		Bukkit.getPluginManager().callEvent(calculationEvent);
+		return calculationEvent.getBonusBlocks();
 	}
 
 	public static int getNationBonusBlocks(Town town) {
@@ -1225,11 +1164,6 @@ public class TownySettings {
 	public static double getNewTownPrice() {
 
 		return getDouble(ConfigNodes.ECO_PRICE_NEW_TOWN);
-	}
-
-	public static double getReclaimTownPrice() {
-
-		return getDouble(ConfigNodes.ECO_PRICE_RECLAIM_TOWN);
 	}
 
 	public static double getNewNationPrice() {
@@ -1349,11 +1283,6 @@ public class TownySettings {
 	public static int getWarzoneHomeBlockHealth() {
 
 		return getInt(ConfigNodes.WAR_EVENT_HOME_BLOCK_HP);
-	}
-
-	public static String[] getWarTimeLoseTownBlockMsg(WorldCoord worldCoord) {
-
-		return getWarTimeLoseTownBlockMsg(worldCoord, "");
 	}
 
 	public static String getDefaultTownName() {
@@ -1660,6 +1589,28 @@ public class TownySettings {
 		}
 		return time;
 	}
+	
+	public static boolean isNewDayDeleting0PlotTowns() {
+		return getBoolean(ConfigNodes.PLUGIN_NEWDAY_DELETE_0_PLOT_TOWNS);
+	}
+
+	public static long getHourInterval() {
+		return getSeconds(ConfigNodes.PLUGIN_HOUR_INTERVAL);
+	}
+
+	public static long getShortInterval() {
+		return getSeconds(ConfigNodes.PLUGIN_SHORT_INTERVAL);
+	}
+
+	public static long getNewHourTime() {
+		long time = getSeconds(ConfigNodes.PLUGIN_NEWHOUR_TIME);
+		long hour = getHourInterval();
+		if (time > hour) {
+			setProperty(ConfigNodes.PLUGIN_NEWHOUR_TIME.getRoot(), hour);
+			return hour;
+		}
+		return time;
+	}
 
 	public static SpawnLevel isAllowingTownSpawn() {
 
@@ -1687,27 +1638,43 @@ public class TownySettings {
 			System.out.println("[Towny] Debug: Reading disallowed town spawn zones. ");
 		return getStrArr(ConfigNodes.GTOWN_SETTINGS_PREVENT_TOWN_SPAWN_IN);
 	}
+	
+	public static boolean getSpawnWarnConfirmations() {
+		return getBoolean(ConfigNodes.GTOWN_SETTINGS_SPAWN_WARNINGS);
+	}
 
 	public static boolean isTaxingDaily() {
 
 		return getBoolean(ConfigNodes.ECO_DAILY_TAXES_ENABLED);
 	}
 
-	public static double getMaxTax() {
+	public static double getMaxPlotTax() {
+		return getDouble(ConfigNodes.ECO_DAILY_TAXES_MAX_PLOT_TAX);
+	}
 
-		return getDouble(ConfigNodes.ECO_DAILY_TAXES_MAX_TAX);
+	public static double getMaxTownTax() {
+		return getDouble(ConfigNodes.ECO_DAILY_TOWN_TAXES_MAX);
+	}
+
+	public static double getMaxNationTax() {
+		return getDouble(ConfigNodes.ECO_DAILY_NATION_TAXES_MAX);
 	}
 	
 	public static double getMaxPlotPrice() {
 		
 		return getDouble(ConfigNodes.GTOWN_MAX_PLOT_PRICE_COST);
 	}
-
-	public static double getMaxTaxPercent() {
-
-		return getDouble(ConfigNodes.ECO_DAILY_TAXES_MAX_TAX_PERCENT);
+	
+	public static double getMaxTownTaxPercent() {
+		
+		return getDouble(ConfigNodes.ECO_DAILY_TAXES_MAX_TOWN_TAX_PERCENT);
 	}
-
+	
+	public static double getMaxTownTaxPercentAmount() { 
+		
+		return getDouble(ConfigNodes.ECO_DAILY_TAXES_MAX_TOWN_TAX_PERCENT_AMOUNT); 
+	}
+	
 	public static boolean isBackingUpDaily() {
 
 		return getBoolean(ConfigNodes.PLUGIN_DAILY_BACKUPS);
@@ -2195,6 +2162,11 @@ public class TownySettings {
 
 		return getInt(ConfigNodes.TOWN_MIN_PLOT_DISTANCE_FROM_TOWN_PLOT);
 	}
+	
+	public static boolean isMinDistanceIgnoringTownsInSameNation() {
+
+		return getBoolean(ConfigNodes.TOWN_MIN_DISTANCE_IGNORED_FOR_NATIONS);
+	}
 
 	public static int getMaxDistanceBetweenHomeblocks() {
 
@@ -2629,6 +2601,16 @@ public class TownySettings {
 		return getInt(ConfigNodes.GTOWN_SETTINGS_SPAWN_TIMER);
 	}
 	
+	public static boolean isMovementCancellingSpawnWarmup() {
+
+		return getBoolean(ConfigNodes.GTOWN_SETTINGS_MOVEMENT_CANCELS_SPAWN_WARMUP);
+	}
+	
+	public static boolean isDamageCancellingSpawnWarmup() {
+		
+		return getBoolean(ConfigNodes.GTOWN_SETTINGS_DAMAGE_CANCELS_SPAWN_WARMUP);
+	}
+	
 	public static int getSpawnCooldownTime() {
 		
 		return getInt(ConfigNodes.GTOWN_SETTINGS_SPAWN_COOLDOWN_TIMER);
@@ -2712,6 +2694,10 @@ public class TownySettings {
 		return getBoolean(ConfigNodes.WAR_DISALLOW_ONE_WAY_ALLIANCE);
 	}
 	
+	public static int getMaxNumResidentsWithoutNation() {
+		return getInt(ConfigNodes.GTOWN_SETTINGS_MAX_NUMBER_RESIDENTS_WITHOUT_NATION);
+	}
+	
 	public static int getNumResidentsJoinNation() {
 		return getInt(ConfigNodes.GTOWN_SETTINGS_REQUIRED_NUMBER_RESIDENTS_JOIN_NATION);
 	}
@@ -2746,12 +2732,12 @@ public class TownySettings {
 	
 	public static String getListPageMsg(int page, int total) {
 		 
-	    return parseString(String.format(getLangString("LIST_PAGE"), String.valueOf(page), String.valueOf(total)))[0];
+	    return parseString(String.format(getLangString("LIST_PAGE"), page, total))[0];
 	}
 	
 	public static String getListNotEnoughPagesMsg(int max) {
 	 
-	    return parseString(String.format(getLangString("LIST_ERR_NOT_ENOUGH_PAGES"), String.valueOf(max)))[0];
+	    return parseString(String.format(getLangString("LIST_ERR_NOT_ENOUGH_PAGES"), max))[0];
 	}
 	
 	public static String[] getWarAPlayerHasNoTownMsg() {
@@ -3020,10 +3006,6 @@ public class TownySettings {
 		return getBoolean(ConfigNodes.WAR_SIEGE_EXPLOSIONS_ALWAYS_ON_IN_BESIEGED_TOWNS);
 	}
 
-	public static boolean getWarSiegeDelayFullTownRemoval() {
-		return getBoolean(ConfigNodes.WAR_SIEGE_DELAY_FULL_TOWN_REMOVAL);
-	}
-
 	public static boolean getWarSiegeClaimingDisabledNearSiegeZones() {
 		return getBoolean(ConfigNodes.WAR_SIEGE_CLAIMING_DISABLED_NEAR_SIEGE_ZONES);
 	}
@@ -3034,10 +3016,6 @@ public class TownySettings {
 
 	public static int getWarSiegeMaxAllowedBannerToTownDownwardElevationDifference() {
 		return getInt(ConfigNodes.WAR_SIEGE_MAX_ALLOWED_BANNER_TO_TOWN_DOWNWARD_ELEVATION_DIFFERENCE);
-	}
-
-	public static double getWarSiegeRuinsRemovalDelayHours() {
-		return getDouble(ConfigNodes.WAR_SIEGE_RUINS_REMOVAL_DELAY_HOURS);
 	}
 
 	public static double getWarSiegeAttackerCostUpFrontPerPlot() {
@@ -3119,12 +3097,16 @@ public class TownySettings {
 		return getBoolean(ConfigNodes.WAR_SIEGE_REFUND_INITIAL_NATION_COST_ON_DELETE);
 	}
 
-	public static boolean getWarSiegeTownNeutralityEnabled() {
-		return getBoolean(ConfigNodes.WAR_SIEGE_TOWN_NEUTRALITY_ENABLED);
+	public static boolean getWarCommonPeacefulTownsEnabled() {
+		return getBoolean(ConfigNodes.WAR_COMMON_PEACEFUL_TOWNS_ENABLED);
 	}
 
-	public static int getWarSiegeTownNeutralityConfirmationRequirementDays() {
-		return getInt(ConfigNodes.WAR_SIEGE_TOWN_NEUTRALITY_CONFIRMATION_REQUIREMENT_DAYS);
+	public static int getWarCommonPeacefulTownsConfirmationRequirementDays() {
+		return getInt(ConfigNodes.WAR_COMMON_PEACEFUL_TOWNS_CONFIRMATION_REQUIREMENT_DAYS);
+	}
+
+	public static int getWarCommonPeacefulTownsResidentPostLeavePeacefulnessDurationHours() {
+		return getInt(ConfigNodes.WAR_COMMON_PEACEFUL_TOWNS_RESIDENT_POST_LEAVE_PEACEFULNESS_DURATION_HOURS);
 	}
 
 	public static boolean getWarSiegePillagingEnabled() {
@@ -3135,36 +3117,16 @@ public class TownySettings {
 		return getDouble(ConfigNodes.WAR_SIEGE_PILLAGE_AMOUNT_PER_PLOT);
 	}
 
-	public static double getWarSiegeRuinsRemovalsTickIntervalMinutes() {
-		return getDouble(ConfigNodes.WAR_SIEGE_RUINS_REMOVALS_TICK_INTERVAL_MINUTES);
+	public static boolean getWarCommonPostRespawnPeacefulnessEnabled() {
+		return getBoolean(ConfigNodes.WAR_COMMON_POST_RESPAWN_PEACEFULNESS_ENABLED);
 	}
 
-	public static boolean getWarSiegePostSpawnDamageImmunityEnabled() {
-		return getBoolean(ConfigNodes.WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_ENABLED);
-	}
-
-	public static int getWarSiegePostSpawnDamageImmunityMinimumDurationSeconds() {
-		return getInt(ConfigNodes.WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_MINIMUM_DURATION_SECONDS);
-	}
-
-	public static boolean getWarSiegeRuinsReclaimEnabled() {
-		return getBoolean(ConfigNodes.WAR_SIEGE_RUINS_RECLAIM_ENABLED);
-	}
-
-	public static double getWarSiegeMinimumRuinsDurationHours() {
-		return getDouble(ConfigNodes.WAR_SIEGE_MINIMUM_RUINS_DURATION_HOURS);
+	public static int getWarCommonPostRespawnPeacefulnessDurationSeconds() {
+		return getInt(ConfigNodes.WAR_COMMON_POST_RESPAWN_PEACEFULNESS_DURATION_SECONDS);
 	}
 
 	public static double getWarSiegeMaximumPillageAmountPerPlot() {
 		return getDouble(ConfigNodes.WAR_SIEGE_MAXIMUM_PILLAGE_AMOUNT_PER_PLOT);
-	}
-
-	public static int getWarSiegePercentagePointsGainDecreasePer1000Advantage() {
-		return getInt(ConfigNodes.WAR_SIEGE_PERCENTAGE_POINTS_GAIN_DECREASE_PER_1000_ADVANTAGE);
-	}
-
-	public static int getWarSiegePercentagePointsGainIncreasePer1000Disadvantage() {
-		return getInt(ConfigNodes.WAR_SIEGE_PERCENTAGE_POINTS_GAIN_INCREASE_PER_1000_DISADVANTAGE);
 	}
 
 	public static boolean getWarSiegeBesiegedTownRecruitmentDisabled() {
@@ -3252,5 +3214,41 @@ public class TownySettings {
 
 	public static int getWarSiegeBannerControlSessionDurationMinutes() {
 		return getInt(ConfigNodes.WAR_SIEGE_BANNER_CONTROL_SESSION_DURATION_MINUTES);
+	}
+
+	public static boolean getWarCommonTownRuinsEnabled() {
+		return getBoolean(ConfigNodes.WAR_COMMON_TOWN_RUINS_ENABLED);
+	}
+
+	public static int getWarCommonTownRuinsMaxDurationHours() {
+		return getInt(ConfigNodes.WAR_COMMON_TOWN_RUINS_MAX_DURATION_HOURS);
+	}
+
+	public static int getWarCommonTownRuinsMinDurationHours() {
+		return getInt(ConfigNodes.WAR_COMMON_TOWN_RUINS_MIN_DURATION_HOURS);
+	}
+
+	public static boolean getWarCommonTownRuinsReclaimEnabled() {
+		return getBoolean(ConfigNodes.WAR_COMMON_TOWN_RUINS_RECLAIM_ENABLED);
+	}
+
+	public static double getEcoPriceReclaimTown() {
+		return getDouble(ConfigNodes.ECO_PRICE_RECLAIM_RUINED_TOWN);
+	}
+
+	public static Integer getWarSiegeMaxTimedPointsPerPlayerPerSiege() {
+		return getInt(ConfigNodes.WAR_SIEGE_SCORING_MAX_TIMED_POINTS_PER_PLAYER_PER_SIEGE);
+	}
+
+	public static boolean getWarSiegePopulationBasedPointBoostsEnabled() {
+		return getBoolean(ConfigNodes.WAR_SIEGE_POPULATION_BASED_POINT_BOOSTS_ENABLED);
+	}
+
+	public static double getWarSiegePopulationQuotientForMaxPointsBoost() {
+		return getDouble(ConfigNodes.WAR_SIEGE_POPULATION_QUOTIENT_FOR_MAX_POINTS_BOOST);
+	}
+
+	public static double getWarSiegeMaxPopulationBasedPointBoost() {
+		return getDouble(ConfigNodes.WAR_SIEGE_MAX_POPULATION_BASED_POINTS_BOOST);
 	}
 }

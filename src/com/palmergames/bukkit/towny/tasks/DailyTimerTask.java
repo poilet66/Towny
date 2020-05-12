@@ -15,7 +15,7 @@ import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.TownyWorld;
 import com.palmergames.bukkit.towny.permissions.TownyPerms;
-import com.palmergames.bukkit.towny.war.siegewar.timeractions.UpdateTownNeutralityCounters;
+import com.palmergames.bukkit.towny.utils.TownPeacefulnessUtil;
 import com.palmergames.bukkit.util.ChatTools;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -80,6 +80,18 @@ public class DailyTimerTask extends TownyTimerTask {
 			new ResidentPurge(plugin, null, TownySettings.getDeleteTime() * 1000, TownySettings.isDeleteTownlessOnly()).start();
 		}
 
+		if (TownySettings.isNewDayDeleting0PlotTowns()) {
+			List<String> deletedTowns = new ArrayList<>();
+			for (Town town : TownyUniverse.getInstance().getTownsMap().values()) {
+				if (town.getTownBlocks().size() == 0) {
+					deletedTowns.add(town.getName());
+					TownyUniverse.getInstance().getDataSource().removeTown(town);
+				}
+			}
+			if (!deletedTowns.isEmpty())
+				TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_the_following_towns_were_deleted_for_having_0_claims"), String.join(", ", deletedTowns)));
+		}
+		
 		TownyUniverse townyUniverse = TownyUniverse.getInstance();
 		
 		// Reduce jailed residents jail time
@@ -121,10 +133,11 @@ public class DailyTimerTask extends TownyTimerTask {
 			}
 		}
 
-		//Update town neutrality counters
-		if(TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegeTownNeutralityEnabled()) 
-			UpdateTownNeutralityCounters.updateTownNeutralityCounters();	
-		
+		//Update town peacefulness counters
+		if (TownySettings.getWarCommonPeacefulTownsEnabled()) {
+			TownPeacefulnessUtil.updateTownPeacefulnessCounters();
+		}
+
 		// Backups
 		TownyMessaging.sendDebugMsg("Cleaning up old backups.");
 
@@ -144,7 +157,7 @@ public class DailyTimerTask extends TownyTimerTask {
 		TownyMessaging.sendDebugMsg("    Towns: " + townyUniverse.getDataSource().getTowns().size());
 		TownyMessaging.sendDebugMsg("    Nations: " + townyUniverse.getDataSource().getNations().size());
 		for (TownyWorld world : townyUniverse.getDataSource().getWorlds())
-			TownyMessaging.sendDebugMsg("    " + world.getName() + " (townblocks): " + world.getTownBlocks().size());
+			TownyMessaging.sendDebugMsg("    " + world.getName() + " (townblocks): " + townyUniverse.getTownBlocks().size());
 
 		TownyMessaging.sendDebugMsg("Memory (Java Heap):");
 		TownyMessaging.sendDebugMsg(String.format("%8d Mb (max)", Runtime.getRuntime().maxMemory() / 1024 / 1024));
@@ -209,7 +222,7 @@ public class DailyTimerTask extends TownyTimerTask {
 					if (town.isCapital()
 						|| !town.hasUpkeep()
 						|| town.isRuined()
-						|| (TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegeTownNeutralityEnabled() && town.isNeutral())) {
+						|| (TownySettings.getWarSiegeEnabled() && TownySettings.getWarCommonPeacefulTownsEnabled() && town.isPeaceful())) {
 						continue;
 					}
 					
@@ -305,6 +318,11 @@ public class DailyTimerTask extends TownyTimerTask {
 						continue;
 					} else if (town.isTaxPercentage()) {
 						double cost = resident.getAccount().getHoldingBalance() * town.getTaxes() / 100;
+						
+						// Make sure that the town percent tax doesn't remove above the
+						// allotted amount of cash.
+						cost = Math.min(cost, town.getMaxPercentTaxAmount());
+						
 						resident.getAccount().payTo(cost, town, "Town Tax (Percentage)");
 					} else if (!resident.getAccount().payTo(town.getTaxes(), town, "Town Tax")) {
 						removedResidents.add(resident.getName());
@@ -447,7 +465,7 @@ public class DailyTimerTask extends TownyTimerTask {
 		}
 		if (removedTowns != null) {
 			if (removedTowns.size() == 1) 
-				TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_bankrupt_town2"),ChatTools.list(removedTowns)));
+				TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_bankrupt_town2"), removedTowns.get(0)));
 			else
 				TownyMessaging.sendGlobalMessage(ChatTools.list(removedTowns, TownySettings.getLangString("msg_bankrupt_town_multiple")));
 		}	
@@ -500,9 +518,9 @@ public class DailyTimerTask extends TownyTimerTask {
 				}
 			}
 		}
-		if (removedNations != null) {
-			if (removedNations.size() == 1) 
-				TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_bankrupt_nation2"), ChatTools.list(removedNations)));
+		if (removedNations != null && !removedNations.isEmpty()) {
+			if (removedNations.size() == 1)
+				TownyMessaging.sendGlobalMessage(String.format(TownySettings.getLangString("msg_bankrupt_nation2"), removedNations.get(0)));
 			else
 				TownyMessaging.sendGlobalMessage(ChatTools.list(removedNations, TownySettings.getLangString("msg_bankrupt_nation_multiple")));
 		}

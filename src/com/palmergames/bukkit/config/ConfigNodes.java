@@ -78,7 +78,7 @@ public enum ConfigNodes {
 			"# Default amount for town's plottax costs."),
 	TOWN_DEF_TAXES_TAXPERCENTAGE(
 			"town.default_taxes.taxpercentage",
-			"false",
+			"true",
 			"# Default status of new town's taxpercentage. True means that the default_tax is treated as a percentage instead of a fixed amount."),
 	TOWN_DEF_TAXES_MINIMUMTAX(
 			"town.default_taxes.minimumtax",
@@ -109,17 +109,25 @@ public enum ConfigNodes {
 			"town.town_limit",
 			"3000",
 			"# Maximum number of towns allowed on the server."),
+	TOWN_MIN_DISTANCE_IGNORED_FOR_NATIONS(
+			"town.min_distances_ignored_for_towns_in_same_nation",
+			"true",
+			"",
+			"# If true, the below settings: min_plot_distance_from_town_plot and min_distance_from_town_homeblock",
+			"# will be ignored for towns that are in the same nation. Setting to false will keep all towns separated the same."),
 	TOWN_MIN_PLOT_DISTANCE_FROM_TOWN_PLOT(
 			"town.min_plot_distance_from_town_plot",
 			"5",
 			"",
 			"# Minimum number of plots any towns plot must be from the next town's own plots.",
+			"# Does not affect towns which are in the same nation.",
 			"# This will prevent town encasement to a certain degree."),
 	TOWN_MIN_DISTANCE_FROM_TOWN_HOMEBLOCK(
 			"town.min_distance_from_town_homeblock",
 			"5",
 			"",
 			"# Minimum number of plots any towns home plot must be from the next town.",
+			"# Does not affect towns which are in the same nation.",
 			"# This will prevent someone founding a town right on your doorstep"),
     TOWN_MIN_DISTANCE_FOR_OUTPOST_FROM_PLOT(
     		"town.min_distance_for_outpost_from_plot",
@@ -381,10 +389,23 @@ public enum ConfigNodes {
 			"global_town_settings.teleport_warmup_time",
 			"0",
 			"# If non zero it delays any spawn request by x seconds."),
+	GTOWN_SETTINGS_MOVEMENT_CANCELS_SPAWN_WARMUP(
+			"global_town_settings.movement_cancels_spawn_warmup",
+			"false",
+			"# When set to true, if players are currently in a spawn warmup, moving will cancel their spawn."),
+	GTOWN_SETTINGS_DAMAGE_CANCELS_SPAWN_WARMUP(
+			"global_town_settings.damage_cancels_spawn_warmup",
+			"false",
+			"# When set to true, if players are damaged in any way while in a spawn warmup, their spawning will be cancelled."),
 	GTOWN_SETTINGS_SPAWN_COOLDOWN_TIMER(
 			"global_town_settings.spawn_cooldown_time",
 			"30",
 			"# Number of seconds that must pass before a player can use /t spawn or /res spawn."),
+	GTOWN_SETTINGS_SPAWN_WARNINGS(
+		"global_town_settings.spawn_warnings",
+		"true",
+		"# Decides whether confirmations should appear if you spawn to an area with an associated cost."
+	),
 	GTOWN_SETTINGS_PVP_COOLDOWN_TIMER(
 			"global_town_settings.pvp_cooldown_time",
 			"30",
@@ -409,6 +430,13 @@ public enum ConfigNodes {
 			"true",
 			"# Enables the [~Home] message.",
 			"# If false it will make it harder for enemies to find the home block during a war"),
+	GTOWN_SETTINGS_MAX_NUMBER_RESIDENTS_WITHOUT_NATION(
+			"global_town_settings.maximum_number_residents_without_nation",
+			"0",
+			"# When set above zero this is the largest number of residents a town can support before they join/create a nation.",
+			"# Do not set this value to an amount less than the required_number_residents_join_nation below.",
+			"# Do not set this value to an amount less than the required_number_residents_create_nation below."
+	),
 	GTOWN_SETTINGS_REQUIRED_NUMBER_RESIDENTS_JOIN_NATION(
 			"global_town_settings.required_number_residents_join_nation",
 			"0",
@@ -463,7 +491,8 @@ public enum ConfigNodes {
 	GTOWN_SETTINGS_HOMEBLOCKS_PREVENT_FORCEPVP(
 			"global_town_settings.homeblocks_prevent_forcepvp",
 			"false",
-			"# If set to true, when a world has forcepvp set to true, homeblocks of towns will not be affected and have PVP set to off."),
+			"# If set to true, when a world has forcepvp set to true, homeblocks of towns will not be affected and have PVP set to off.",
+			"# Does not have any effect when Event War is active."),
 	GTOWN_SETTINGS_MINIMUM_AMOUNT_RESIDENTS_FOR_OUTPOSTS(
 			"global_town_settings.minimum_amount_of_residents_in_town_for_outpost",
 			"0",
@@ -673,7 +702,25 @@ public enum ConfigNodes {
 			"12h",
 			"# The time each \"day\", when taxes will be collected.",
 			"# MUST be less than day_interval. Default is 12h (midday)."),
-
+	PLUGIN_NEWDAY_DELETE_0_PLOT_TOWNS(
+			"plugin.day_timer.delete_0_plot_towns",
+			"false",
+			"# Whether towns with no claimed townblocks should be deleted when the new day is run."),
+	PLUGIN_HOUR_INTERVAL(
+			"plugin.hour_timer.hour_interval",
+			"60m",
+			"# The number of minutes in each \"day\".",
+			"# Default is 60m."),
+	PLUGIN_NEWHOUR_TIME(
+			"plugin.hour_timer.new_hour_time",
+			"30m",
+			"# The time each \"hour\", when the hourly timer ticks.",
+			"# MUST be less than hour_interval. Default is 30m."),
+	PLUGIN_SHORT_INTERVAL(
+			"plugin.hour_timer.short_interval",
+			"20s",
+			"# The interval of each \"short\" timer tick",
+			"# Default is 20s."),
 	PLUGIN_DEBUG_MODE(
 			"plugin.debug_mode",
 			"false",
@@ -1226,7 +1273,7 @@ public enum ConfigNodes {
 	ECO_PRICE_TOWN_SPAWN_TRAVEL(
 			"economy.spawn_travel.price_town_spawn_travel",
 			"0.0",
-			"# Cost to use /town spawn"),
+			"# Cost to use /town spawn."),
 	ECO_PRICE_TOWN_SPAWN_TRAVEL_NATION(
 			"economy.spawn_travel.price_town_nation_spawn_travel",
 			"5.0",
@@ -1238,7 +1285,7 @@ public enum ConfigNodes {
 	ECO_PRICE_TOWN_SPAWN_TRAVEL_PUBLIC(
 			"economy.spawn_travel.price_town_public_spawn_travel",
 			"10.0",
-			"# Cost to use /town spawn [town]",
+			"# Maximum cost to use /town spawn [town] that mayors can set using /t set spawncost.",
 			"# This is paid to the town you goto."),
 	ECO_PRICE_TOWN_SPAWN_PAID_TO_TOWN(
 			"economy.spawn_travel.town_spawn_cost_paid_to_town",
@@ -1260,11 +1307,11 @@ public enum ConfigNodes {
 			"economy.new_expand.price_new_town",
 			"250.0",
 			"# How much it costs to start a town."),
-	ECO_PRICE_RECLAIM_TOWN(
-			"economy.new_expand.price_reclaim_town",
+	ECO_PRICE_RECLAIM_RUINED_TOWN(
+			"economy.new_expand.price_reclaim_ruined_town",
 			"200.0",
 			"# How much it costs to reclaim a ruined town.",
-			"# This is only applicable if the delay-town-removal & allow-town-reclaim features are enabled."),
+			"# This is only applicable if the town-ruins & town-reclaim features are enabled."),
 	ECO_PRICE_OUTPOST(
 			"economy.new_expand.price_outpost",
 			"500.0",
@@ -1344,14 +1391,27 @@ public enum ConfigNodes {
 			"# if a resident can't pay his plot tax he loses his plot.",
 			"# if a resident can't pay his town tax then he is kicked from the town.",
 			"# if a town or nation fails to pay it's upkeep it is deleted."),
-	ECO_DAILY_TAXES_MAX_TAX(
-			"economy.daily_taxes.max_tax_amount",
+	ECO_DAILY_TAXES_MAX_PLOT_TAX(
+			"economy.daily_taxes.max_plot_tax_amount",
 			"1000.0",
-			"# Maximum tax amount allowed when using flat taxes"),
-	ECO_DAILY_TAXES_MAX_TAX_PERCENT(
-			"economy.daily_taxes.max_tax_percent",
+			"# Maximum tax amount allowed for townblocks sold to players."),
+	ECO_DAILY_TOWN_TAXES_MAX(
+			"economy.daily_taxes.max_town_tax_amount",
+			"1000.0",
+			"# Maximum tax amount allowed for towns when using flat taxes."),
+	ECO_DAILY_NATION_TAXES_MAX(
+			"economy.daily_taxes.max_nation_tax_amount",
+			"1000.0",
+			"# Maximum tax amount allowed for nations when using flat taxes."),
+	ECO_DAILY_TAXES_MAX_TOWN_TAX_PERCENT(
+			"economy.daily_taxes.max_town_tax_percent",
 			"25",
-			"# maximum tax percentage allowed when taxing by percentages"),
+			"# Maximum tax percentage allowed when taxing by percentages for towns."),
+	ECO_DAILY_TAXES_MAX_TOWN_TAX_PERCENT_AMOUNT(
+			"economy.daily_taxes.max_town_tax_percent_amount",
+			"10000",
+			"# The maximum amount of money that can be taken from a balance when using a percent tax, this is the default for all new towns."
+			),
 	ECO_PRICE_NATION_UPKEEP(
 			"economy.daily_taxes.price_nation_upkeep",
 			"100.0",
@@ -1591,7 +1651,8 @@ public enum ConfigNodes {
 			"war.event.remove_on_monarch_death",
 			"false",
 			"",
-			"# If true and the monarch/king dies the nation is removed from the war."),
+			"# If true and the monarch/king dies the nation is removed from the war.",
+			"# Also removes a town from the war event when the mayor dies."),
 	WAR_EVENT_BLOCK_GRIEFING(
 			"war.event.allow_block_griefing",
 			"false",
@@ -1849,19 +1910,6 @@ public enum ConfigNodes {
 			"true",
 			"# If true, then land cannot be claimed near a siege zone.",
 			"# This setting is generally considered critical, otherwise one side could wall off the siege zone."),
-	WAR_SIEGE_DELAY_FULL_TOWN_REMOVAL(
-			"war.siege.switches.delay_full_town_removal",
-			"true",
-			"# If this is true, then if a town falls, it remains in a 'ruined' state for a time.",
-			"# In this state, the town cannot be claimed, but can be looted",
-			"# This setting is generally considered critical,",
-			"# because it prevents mayors from avoiding sieges/occupation by ",
-		    "# deleting then quickly recreating their town."),
-	WAR_SIEGE_RUINS_RECLAIM_ENABLED(
-			"war.siege.switches.ruins_reclaim_enabled",
-			"true",
-			"# If this is true, then after a town has been ruined for a certain (configurable) duration,",
-			"# it can then be reclaimed by any resident who runs /t reclaim, and pays the required price (configured in the eco section in this file)"),
 	WAR_SIEGE_ATTACKER_SPAWN_INTO_BESIEGED_TOWN_DISABLED(
 			"war.siege.switches.attacker_spawn_into_besieged_town_disabled",
 			"true",
@@ -1870,20 +1918,10 @@ public enum ConfigNodes {
 	WAR_SIEGE_REFUND_INITIAL_NATION_COST_ON_DELETE(
 			"war.siege.switches.refund_initial_nation_cost_on_delete",
 			"true",
-			"# If this is true, then when a king deletes the nation,",
-			"# they will be refunded the initial new nation cost.",
-			"# This prevents the new nation cost becoming a sunken cost due to invasion."),
-	WAR_SIEGE_TOWN_NEUTRALITY_ENABLED(
-			"war.siege.switches.town_neutrality_enabled",
-			"true",
-			"# If this is true, then a town can toggle neutrality,",
-			"# After a countdown (usually in days), the new town status is confirmed.",
-			"# A neutral town is protected from siege-forced-pvp, plunder, and occupation taxes.",
-		    "# It can be captured, adding to an invading nation's town count, but the occupation is in-name only.",
-			"# This option may improve the server-play experience for: ",
-			"# - Towns who are (currently) in an otherwise-hopeless strategic position e.g. completely surrounded by much more powerful enemies,",
-			"# - Towns who are building strength and preparing for war, but not yet ready to handle plunder costs",
-			"# - Towns who prefer to influence world events and wars via subtle diplomatic methods rather than military strength"),
+			"# If this is true, then when a nation is deleted/destroyed,",
+			"# a refund amount will be made available to the former king.", 
+		    "# This money can then be reclaim using /n claim refund.",
+			"# This prevents the new nation cost becoming a large sunken cost due to invasion."),
 	WAR_SIEGE_PILLAGING_ENABLED(
 			"war.siege.switches.pillaging_enabled",
 			"true",
@@ -1898,12 +1936,6 @@ public enum ConfigNodes {
 		    "#    Otherwise, attacking soldiers at the banner are toiling for a distant reward, and the reward. if it arrives after a long siege. will only be received by the mayor or king anyway.",
 			"# 2. Defenders are motivated to fight because of immediate financial danger.",
 			"#    Otherwise, there is no urgent motivation for defenders to come out and fight, and defenders will often be better off waiting passively for enemy soldiers to leave the area, coming out only then to gain timed points and ultimately win."),
-	WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_ENABLED(
-			"war.siege.switches.post_spawn_damage_immunity_enabled",
-			"true",
-			"# If this value is true, then spawn camping is prevented/reduced by the following automatic measure: ",
-			"# - After spawning, a player will be immune to damage (and cannot damage entities) for a short time (typically less than a minute).",
-			"# - Thus, during a siege, even if the enemy has breached the town walls, a spawning player has time to get to (or create) a safe location."),
 	WAR_SIEGE_BESIEGED_TOWN_RECRUITMENT_DISABLED(
 			"war.siege.switches.besieged_town_recruitment_disabled",
 			"true",
@@ -1931,6 +1963,13 @@ public enum ConfigNodes {
 			"# Underdog sides in particularly, have significantly less to lose by counter attacking.",
 			"# The setting causes battles to be more aggressive/immediate.", 
 			"# The setting is recommended."),
+	WAR_SIEGE_POPULATION_BASED_POINT_BOOSTS_ENABLED(
+			"war.siege.switches.population_based_point_boosts_enabled",
+			"false",
+			"# If this setting is true, then the siege side with the lower population gets a boost to their siege point gains.",
+			"# The attacking side population consists of the residents of the attacking nation, and allies.",
+			"# The defending side population consists of the residents of the defending town, and nation + allies if applicable.",
+			"# The level of the boost is configured in separate configs. See the scoring section of this file."),
 
 	//Monetary Values
 	WAR_SIEGE_ATTACKER_COST_UPFRONT_PER_PLOT(
@@ -2035,37 +2074,12 @@ public enum ConfigNodes {
 			"# This value determines how long a town must wait before it can revolt against an occupying nation nation. The immunity time gets set to the given value if a town is captured, or if it revolts.",
 			"# If the value is too high, towns will be frustrated that it is too difficult to revolt against an occupier.",
 			"# If the value is too low, nations will find it difficult to hold territory due to constant revolts."),
-	WAR_SIEGE_RUINS_REMOVAL_DELAY_HOURS(
-			"war.siege.times.ruins_removal_delay_hours",
-			"72",
-			"# This setting determines the maximum delay between a town being ruined, and final deletion."),
-	WAR_SIEGE_MINIMUM_RUINS_DURATION_HOURS(
-			"war.siege.times.minimum_ruins_duration_hours",
-			"24",
-			"# This value determines the minimum duration for which a town must lie in ruins,",
-			"# before it can be reclaimed by a resident."),
 	WAR_SIEGE_ZONE_MAXIMUM_SCORING_DURATION_MINUTES(
 			"war.siege.times.zone_maximum_scoring_duration_minutes",
 			"15",
 			"# This setting determines the maximum duration a player can continue to score siege points, while remaining in the siege zone.",
 			"# After this time, to resume scoring points, the player will need to exit then re-enter the siege zone.",
 			"# The setting is an important anti-afk'ing feature."),
-	WAR_SIEGE_TOWN_NEUTRALITY_CONFIRMATION_REQUIREMENT_DAYS(
-			"war.siege.times.town_neutrality_confirmation_requirement_days",
-			"7",
-			"# This value determines how long it takes to confirm a town neutrality status change.",
-			"# It is recommended to be relatively high, ",
-		    "# for use by genuinely neutral towns, not just towns which wish to quickly toggle on/off to reduce war costs."),
-	WAR_SIEGE_RUINS_REMOVALS_TICK_INTERVAL_MINUTES(
-			"war.siege.times.ruins_removals_tick_interval_minutes",
-			"30",
-			"# This value determines the interval between ruins removals ticks, in which ruins are checked for deletion."),
-	WAR_SIEGE_POST_SPAWN_DAMAGE_IMMUNITY_MINIMUM_DURATION_SECONDS(
-			"war.siege.times.post_spawn_damage_immunity_minimum_duration_seconds",
-			"30",
-			"# This value determines the minimum duration after spawning in which a player is immune to damage (and cannot damage entities).",
-			"# The actual value may be larger for each individual respawn - the max additional time is approximately equal to the siege war timer tick interval.",
-			"# Thus by default the actual value will be 30-60 seconds"),
 	WAR_SIEGE_BANNER_CONTROL_SESSION_DURATION_MINUTES (
 			"war.siege.times.banner_control_session_duration_minutes",
 			"10",
@@ -2134,16 +2148,6 @@ public enum ConfigNodes {
 			"# - Also siege-zone occupation can sometimes be boring if one side is avoiding meeting the other in direct combat.",
 			"# If the value is too low, then too few players can be involved in siege zone banner occupation.",
 			"# - Thus, some players in a town, nation, or allies may not be able to contribute as much to wars as they might wish."),
-	WAR_SIEGE_PERCENTAGE_POINTS_GAIN_DECREASE_PER_1000_ADVANTAGE(
-			"war.siege.scoring.percentage_points_gain_decrease_per_1000_advantage",
-			"0",
-			"# This setting gives an disadvantage to larger/more active towns and nations",
-			"# It works by decreasing all siege point gains for a side, depending on how far the side is already ahead."),
-	WAR_SIEGE_PERCENTAGE_POINTS_GAIN_INCREASE_PER_1000_DISADVANTAGE(
-			"war.siege.scoring.percentage_points_gain_increase_per_1000_disadvantage",
-			"0",
-			"# This setting gives an advantage to smaller/less active towns and nations",
-			"# It works by increasing all siege point gains for a side, depending on how far the side is already behind."),
 	WAR_SIEGE_POINTS_PERCENTAGE_ADJUSTMENT_FOR_LEADER_PROXIMITY(
 			"war.siege.scoring.percentage_adjustment_for_leader_proximity",
 			"10",
@@ -2153,6 +2157,31 @@ public enum ConfigNodes {
 			"war.siege.scoring.percentage_adjustment_for_leader_death",
 			"50",
 			"# If a military leader dies in a siege, then points loss in increased by this percentage."),
+	WAR_SIEGE_SCORING_MAX_TIMED_POINTS_PER_PLAYER_PER_SIEGE(
+			"war.siege.scoring.max_timed_points_per_player_per_siege",
+			"9000",
+			"# This setting determines the maximum number of 'timed' siege points achievable by an individual player per siege.",
+			"# The setting is used to balance the system between casual players and dedicated players (i.e. those who spend a lot of time on the server).",
+			"# The higher the value, the more that dedicated players are favored.",
+			"# The lower the value, the more that casual players are favored."),
+	WAR_SIEGE_POPULATION_QUOTIENT_FOR_MAX_POINTS_BOOST(
+			"war.siege.scoring.population_quotient_for_max_points_boost",
+			"3.0",
+			"# This setting determines the population quotient which results in max points boots.",
+			"# Example:",
+			"# 1. Assume this value is set to 3.0.",
+		    "# 2. Assume a siege attacker has 3 times the population of a siege defender (counting allied populations too).",
+			"# 3. In this example, if the siege defender scores any siege points, the points will be boosted by the (separately configured) maximum.",
+            "# 4. In this example, the siege attacker will not get any points boosts."),
+	WAR_SIEGE_MAX_POPULATION_BASED_POINTS_BOOST(
+			"war.siege.scoring.max_population_based_points_boost",
+			"2.0",
+			"# This setting determines the maximum points boost which a siege side can get due to population.",
+			"# Example:",
+			"# 1. Assume this value is set to 2.0.",
+			"# 2. Assume that a siege attacker greatly outnumbers a siege defender in population. (also counting allies)",
+			"# 3. In this example, if the siege defender scores any siege points, the points will be multiplied by 2.",
+			"# 4. In this example, the siege attacker will not get any points boosts."),
 
 	//Tactical Visibility
 	//Todo - Eventually move this to another location as it works regardless of war system, or without.
@@ -2185,7 +2214,99 @@ public enum ConfigNodes {
 			"# Example 1:  An entry with 'shield|diamond_sword' grants the feature to soldiers.",
 			"# Example 2:  An entry with 'compass|diamond_sword' grants the feature to scouts/explorers.",
 			"# Example 3:  An entry with 'compass|air' grants the feature to very peaceful explorers.",
-			"# Example 4:  An entry with 'compass|any' grants the feature to many players including builders/miners/lumberjacks.");
+			"# Example 4:  An entry with 'compass|any' grants the feature to many players including builders/miners/lumberjacks."),
+
+	WAR_COMMON(
+		"war.common",
+		"",
+		"############################################################",
+		"# +------------------------------------------------------+ #",
+		"# |                 Common War settings                  | #",
+		"# |                                                      | #",
+		"# |  These configs are common to multiple war systems.   | #",
+		"# |                                                      | #",
+		"# |  Note: The town ruins settings are here,             | #",
+		"# |  because town ruin is critical to many war systems   | #",
+		"# |  												      | #",
+		"# +------------------------------------------------------+ #",
+		"############################################################",
+		""),
+	
+	//Town Ruins
+	WAR_COMMON_TOWN_RUINS_ENABLED(
+			"war.common.town_ruins.enabled",
+			"true",
+			"# If this is true, then if a town falls, it remains in a 'ruined' state for a time.",
+			"# In this state, the town cannot be claimed, but can be looted.",
+			"# The feature prevents mayors from escaping attack/occupation, ",
+			"# by deleting then quickly recreating their town."),
+	WAR_COMMON_TOWN_RUINS_MAX_DURATION_HOURS(
+			"war.common.town_ruins.max_duration_hours",
+			"72",
+			"# This value determines the maximum duration in which a town can lie in ruins",
+			"# After this time is reached, the town will be completely deleted."),
+	WAR_COMMON_TOWN_RUINS_MIN_DURATION_HOURS(
+			"war.common.town_ruins.min_duration_hours",
+			"24",
+			"# This value determines the minimum duration in which a town must lie in ruins,",
+			"# before it can be reclaimed by a resident."),
+	WAR_COMMON_TOWN_RUINS_RECLAIM_ENABLED(
+			"war.common.town_ruins.reclaim_enabled",
+			"true",
+			"# If this is true, then after a town has been ruined for the minimum configured time,",
+			"# it can then be reclaimed by any resident who runs /t reclaim, and pays the required price. (price is configured in the eco section)"),
+
+	//Peaceful towns
+	WAR_COMMON_PEACEFUL_TOWNS_ENABLED(
+			"war.common.peaceful_towns.enabled",
+			"true",
+			"# If this is true, then a town can toggle peacefulness,",
+			"# After a countdown (usually in days), the new town status is confirmed.",
+			"# The status has different effects depending on the war-system",
+			"# ",
+			"# Common:",
+			"# PVP is forced off in the town",
+			"# Residents cannot inflict pvp damage",
+			"# A resident who leaves such a town cannot inflict PVP for a (configured) number of hours.",
+			"# ",
+			"# Siegewar:", 
+			"# A peaceful town is protected from all material siege costs e.g. pillage, plunder, and occupier taxes.",
+			"# Residents cannot have nation-military-ranks (e.g. soldier)",
+			"# ",
+			"# PLAYER TIPS:",
+			"# If a town is in any of the following scenarios, it may find the feature useful:",
+			"# 1. Town is building strength and preparing for war, but not yet ready to handle war costs.",
+			"# 2. Town is currently in a hopeless geo-political position e.g. completely surrounded by much more powerful enemies,",
+			"# 3. Town is interested in politics, but prefers to influence world events via diplomatic/economic methods rather than military strength.",
+			"# 4. Town is not currently interested much in war/politics, and just wants to build in peace.",
+		    "# ",
+			"# SERVER TIPS",
+			"# This option is recommended as a 'safety valve'",
+			"# E.g. if something has been badly coded or misconfigured,", 
+			"# this option gives players an off-ramp from the system without flooding staff w/ tickets,"),
+	WAR_COMMON_PEACEFUL_TOWNS_CONFIRMATION_REQUIREMENT_DAYS(
+			"war.common.peaceful_towns.confirmation_requirement_days",
+			"7",
+			"# This value determines how long it takes to confirm a town peacefulness status change.",
+			"# It is recommended to be high, for use by genuinely peaceful towns, not just for war cost avoidance."),
+	WAR_COMMON_PEACEFUL_TOWNS_RESIDENT_POST_LEAVE_PEACEFULNESS_DURATION_HOURS(
+			"war.common.peaceful_towns.resident_post_leave_peacefulness_duration_hours",
+			"72",
+			"# This value determines how long a resident remains 'peaceful' after they leave a peaceful town.",
+			"# In this time they cannot inflict PVP damage, or (in Siegewar) gain nation-military ranks."),
+
+	//Post-Respawn Peacefulness
+	WAR_COMMON_POST_RESPAWN_PEACEFULNESS_ENABLED(
+			"war.common.post_respawn_peacefulness.enabled",
+			"true",
+			"# If this value is true, then spawn camping is prevented/reduced by the following automatic measure: ",
+			"# - After spawning, a player will be immune to all damage, and cannot inflict damage, for a short time (typically less than a minute).",
+			"# - Thus, during a siege, even if the enemy has breached the town walls, a spawning player has time to get to (or create) a safe location."),
+	WAR_COMMON_POST_RESPAWN_PEACEFULNESS_DURATION_SECONDS(
+			"war.common.post_respawn_peacefulness.duration_seconds",
+			"40",
+			"# This value determines the minimum duration after spawning in which a player is marked peaceful.",
+			"# The value will not be this precise in practice, but limited by the short timer tick interval.");
 
 	private final String Root;
 	private final String Default;

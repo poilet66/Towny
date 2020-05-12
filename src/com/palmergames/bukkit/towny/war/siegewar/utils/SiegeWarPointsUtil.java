@@ -14,6 +14,8 @@ import com.palmergames.bukkit.towny.war.siegewar.objects.Siege;
 import com.palmergames.bukkit.util.BukkitTools;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -206,13 +208,13 @@ public class SiegeWarPointsUtil {
 		int siegePoints;
 		if (residentIsAttacker) {
 			siegePoints = -TownySettings.getWarSiegePointsForAttackerDeath();
-			siegePoints = adjustSiegePointGainForCurrentSiegePointBalance(siegePoints, siege);
 			siegePoints = adjustSiegePenaltyPointsForMilitaryLeadership(residentIsAttacker, siegePoints, player, resident, siege);
+			siegePoints = adjustSiegePointsForPopulationQuotient(false, siegePoints, siege);
 			siege.adjustSiegePoints(siegePoints);
 		} else {
 			siegePoints = TownySettings.getWarSiegePointsForDefenderDeath();
-			siegePoints = adjustSiegePointGainForCurrentSiegePointBalance(siegePoints, siege);
 			siegePoints = adjustSiegePenaltyPointsForMilitaryLeadership(residentIsAttacker, siegePoints, player, resident, siege);
+			siegePoints = adjustSiegePointsForPopulationQuotient(true, siegePoints, siege);
 			siege.adjustSiegePoints(siegePoints);
 		}
 
@@ -241,47 +243,6 @@ public class SiegeWarPointsUtil {
 		SiegeWarNotificationUtil.informSiegeParticipants(siege, message);
 
 		return true;
-	}
-
-	/**
-	 * This method returns an altered siege point gain, depending on the current siege point balance
-	 *
-	 * @param baseSiegePointGain the base  siege point gain
-	 * @param siege to siege where the gain will be applied
-	 * @return the altered gain
-	 */
-	public static int adjustSiegePointGainForCurrentSiegePointBalance(double baseSiegePointGain, Siege siege) {
-		//Reduce gain if you already have an advantage
-		if(TownySettings.getWarSiegePercentagePointsGainDecreasePer1000Advantage() > 0) {
-			if(
-				(siege.getSiegePoints() > 0 && baseSiegePointGain > 0)
-					||
-					(siege.getSiegePoints() < 0 && baseSiegePointGain < 0)
-			) {
-				int numThousands = Math.abs(siege.getSiegePoints() / 1000);
-				int percentageDecrease = numThousands * TownySettings.getWarSiegePercentagePointsGainDecreasePer1000Advantage();
-				double actualDecrease = baseSiegePointGain / 100 * percentageDecrease;
-				baseSiegePointGain -= actualDecrease;
-				return (int)baseSiegePointGain;
-			}
-		}
-
-		//Increase gain if you already have a disadvantage
-		if(TownySettings.getWarSiegePercentagePointsGainIncreasePer1000Disadvantage() > 0) {
-			if(
-				(siege.getSiegePoints() > 0 && baseSiegePointGain < 0)
-					||
-					(siege.getSiegePoints() < 0 && baseSiegePointGain > 0)
-			) {
-				int numThousands = Math.abs(siege.getSiegePoints() / 1000);
-				int percentageIncrease = numThousands * TownySettings.getWarSiegePercentagePointsGainIncreasePer1000Disadvantage();
-				double actualIncrease = baseSiegePointGain / 100 * percentageIncrease;
-				baseSiegePointGain += actualIncrease;
-				return (int)baseSiegePointGain;
-			}
-		}
-
-		return (int)baseSiegePointGain;
 	}
 
 	private static int adjustSiegePenaltyPointsForMilitaryLeadership(boolean residentIsAttacker,
@@ -377,5 +338,104 @@ public class SiegeWarPointsUtil {
 		}
 
 		return (int)siegePoints;
+	}
+
+	public static void updatePopulationBasedSiegePointModifiers() {
+		Map<Nation,Integer> nationSidePopulationsCache = new HashMap<>();
+		for (Siege siege : TownyUniverse.getInstance().getDataSource().getSieges()) {
+			updateSiegePointPopulationModifier(siege, nationSidePopulationsCache);
+		}
+	}
+
+	private static void updateSiegePointPopulationModifier(Siege siege, Map<Nation,Integer> nationSidePopulationsCache) {
+		Nation nation = null;
+		int attackerPopulation;
+		int defenderPopulation;
+
+		//Calculate defender population
+		if(siege.getDefendingTown().hasNation()) {
+			try {
+				nation = siege.getDefendingTown().getNation();
+			} catch (NotRegisteredException e) {
+			}
+			if(nationSidePopulationsCache != null && nationSidePopulationsCache.containsKey(nation)) {
+				defenderPopulation = nationSidePopulationsCache.get(nation);
+			} else {
+				defenderPopulation = nation.getNumResidents();
+				for(Nation alliedNation: nation.getMutualAllies()) {
+					defenderPopulation += alliedNation.getNumResidents();
+				}
+				if(nationSidePopulationsCache != null) 
+					nationSidePopulationsCache.put(nation, defenderPopulation);
+			}
+		} else {
+			defenderPopulation = siege.getDefendingTown().getNumResidents();
+		}
+
+		//Calculate attacker population
+		nation = siege.getAttackingNation();
+		if(nationSidePopulationsCache != null && nationSidePopulationsCache.containsKey(nation)) {
+			attackerPopulation = nationSidePopulationsCache.get(nation);
+		} else {
+			attackerPopulation = nation.getNumResidents();
+			for (Nation alliedNation : nation.getMutualAllies()) {
+				attackerPopulation += alliedNation.getNumResidents();
+			}
+			if (nationSidePopulationsCache != null)
+				nationSidePopulationsCache.put(nation, attackerPopulation);
+		}
+
+		//Note which side has the lower population
+		siege.setAttackerHasLowestPopulation(attackerPopulation < defenderPopulation);
+
+		/*
+		 * Calculate siege point modifier
+		 * 
+		 * Terminology: 
+		 * The 'quotient' is the number of times the smaller population is contained in the larger one
+		 */
+		double maxPopulationQuotient = TownySettings.getWarSiegePopulationQuotientForMaxPointsBoost();
+		double actualPopulationQuotient;
+			if(siege.isAttackerHasLowestPopulation()) {
+				actualPopulationQuotient = (double) defenderPopulation / attackerPopulation;
+			} else {
+				actualPopulationQuotient = (double) attackerPopulation / defenderPopulation;
+			}
+		double appliedPopulationQuotient;
+			if(actualPopulationQuotient < maxPopulationQuotient) {
+				appliedPopulationQuotient = actualPopulationQuotient;
+			} else {
+				appliedPopulationQuotient = maxPopulationQuotient;
+			}
+			
+		//Normalized point boost
+		//0 represents no boost
+		//1 represents max boost
+		double normalizedPointBoost = (appliedPopulationQuotient -1) / (maxPopulationQuotient -1);
+	
+		//Siege Point modifier
+		//Lowest possible value should be 1.
+		//Highest possible value should be the max boost value in the config
+		double siegePointModifier = 1 + (normalizedPointBoost * (TownySettings.getWarSiegeMaxPopulationBasedPointBoost() -1));
+		
+		siege.setSiegePointModifierForSideWithLowestPopulation(siegePointModifier);
+	}
+
+	public static int adjustSiegePointsForPopulationQuotient(boolean attackerGain, int siegePoints, Siege siege) {
+		if(!TownySettings.getWarSiegePopulationBasedPointBoostsEnabled()) {
+			return siegePoints;
+		}
+
+		if (siege.getSiegePointModifierForSideWithLowestPopulation() == 0) {
+			updateSiegePointPopulationModifier(siege, null); //Init values
+		}
+
+		if((attackerGain && !siege.isAttackerHasLowestPopulation())
+			|| (!attackerGain && siege.isAttackerHasLowestPopulation())) {
+			return siegePoints;
+		}
+
+		double modifier = siege.getSiegePointModifierForSideWithLowestPopulation();
+		return (int) (siegePoints * modifier);
 	}
 }

@@ -1,5 +1,5 @@
 name: Towny
-version: 0.77
+version: 0.83
 language: english
 author: ElgarL
 website: 'http://townyadvanced.github.io/'
@@ -964,7 +964,7 @@ msg_err_mysql_not_being_used: 'Your config is not set to save & load mysql.'
 msg_save_success: 'Database saved.'
 msg_load_success: 'Database loaded.'
 msg_err_cannot_afford_to_set_outpost: 'Your town does not have enough funds to set this townblock to an outpost.'
-msg_too_close2: 'This area is too close to another town''s  %s.'
+msg_too_close2: 'This area is too close to another town''s %s.'
 homeblock: 'homeblock'
 townblock: 'townblock'
 outpost: 'outpost'
@@ -1097,8 +1097,42 @@ msg_click_spawn: '&aClick to spawn to: &e%s'
 msg_spawn_cost: '&aSpawn Cost = &e%s'
 
 # Added in 0.78
+msg_reload_error: 'There was an error reloading Towny.'
+msg_reloaded_config: '&2Configuration successfully reloaded.'
+msg_reloaded_perms: '&2Permissions successfully reloaded.'
+msg_reloaded_db: '&2Database successfully reloaded'
+msg_reloaded_lang: '&2Language file successfully reloaded'
+msg_reset_config: '&2Config has been reset'
+msg_err_teleport_cancelled: 'Moving has cancelled your teleport.'
+
+# Added in 0.79
+msg_cache_block_error_plot_friends: 'friends'
+msg_cache_block_error_plot_allies: 'allies'
+msg_cache_block_error_plot_outsiders: 'outsiders'
+msg_cache_block_error_plot_town_members: 'town members'
 msg_err_invalid_nation_map_color: '&cUnknown map color. Allowed colors are %s.'
 msg_nation_map_color_changed: '&bThe nation map color was changed to %s.'
+msg_err_unable_to_add_more_residents_without_nation: 'Your town cannot invite more than %s residents without first joining or creating a nation.'
+msg_the_following_towns_were_deleted_for_having_0_claims: 'The following towns were deleted for having 0 claims: %s'
+msg_spawn_warn: 'Spawning costs %s. Continue? Hint: add -ignore to skip these confirmations.'
+msg_confirm_purchase: 'Doing this will cost %s. Continue?'
+msg_warn_the_following_towns_will_be_removed_from_your_nation: 'The following towns will be removed from your nation: %s. Do you wish to continue?'
+msg_ta_deposit_all_success: 'Successfully deposited %s to all nations'' and towns'' banks.'
+bonus_townblocks: 'bonus townblocks'
+
+# Added in 0.80
+nomad_sing: 'Nomad'
+msg_new_town_advice: 'Congratulation on creating your town! Your town will pay a daily upkeep which is currently valued at %s. You can deposit money in your town''s bank using ''/t deposit #''. Without money to pay the upkeep your town will be deleted. You can see your costs anytime using /towny prices. Next daily upkeep taken in %s.'
+
+# Added in 0.81
+msg_err_teleport_cancelled_damage: 'Damage has cancelled your teleport.'
+
+# Added in 0.82
+invitation_prefix: "&8[&7Invitation&8] &9"
+confirmation_prefix: "&8[&7Confirmation&8] &9"
+this_message_will_expire2: '&9This will auto-expire in 20 seconds'
+msg_hover_next_page: 'Next Page'
+msg_hover_previous_page: 'Previous Page'
 
 # Added in ? (for siege war)
 #Siege war happy-path messages
@@ -1125,18 +1159,14 @@ msg_siege_war_nation_town_plundered: '&6[War]&b %s has been plundered of %s by %
 msg_siege_war_town_ruined_from_plunder: '&6[War]&b %s has been reduced to ruins by %s!'
 msg_siege_war_town_ruined_from_pillage: '&6[War]&b %s has been reduced to ruins due to pillaging by the soldiers of %s!'
 msg_siege_war_nation_defeated: '&6[War]&b %s has been defeated!.'
-msg_siege_war_refund_initial_cost_on_nation_delete: '&b%s has been refunded %s of the initial nation cost.'
-msg_siege_war_town_declared_neutral: '&bNeutrality Declared!. The town will be confirmed as neutral in %d day(s).'
-msg_siege_war_town_declared_non_neutral: '&bNon-Neutrality Declared!. The town will be confirmed as non-neutral in %d day(s).'
-msg_siege_war_town_neutrality_countdown_cancelled: '&bThe neutrality status change countdown was cancelled.'
-msg_siege_war_town_became_neutral: '&b%s has been confirmed as Neutral. The town can no longer join a nation. The town residents can no longer inflict PVP damage. The town is now immune to material siege costs (e.g. pvp, plunder, and taxes).'
-msg_siege_war_town_became_non_neutral: '&b%s has been confirmed as not-neutral. The town can now join a nation. The town residents can now inflict PVP damange. The town is no longer immune to material siege costs (e.g. pvp, plunder, and taxes).'
 msg_siege_war_attacking_troops_at_siege_banner: '&6[War]&b Siege on %s > Attackers are at the siege banner.'
 msg_siege_war_defending_troops_at_siege_banner: '&6[War]&b Siege on %s > Town defenders are at the siege banner.'
 msg_siege_war_banner_control_session_started: '&6[War]&b Banner control session started. If you remain outside the town, and within %d blocks of the siege-banner, for %s, you will gain banner control (or be added to the banner control list). Do not go invisible/flying/underground.'
 msg_siege_war_banner_control_session_success: '&6[War]&b Banner control session succeeded!. You have been added to the banner control list.'
 msg_siege_war_banner_control_gained_by_attacker: '&6[War]&b Siege on %s > The attackers have gained banner control.'
 msg_siege_war_banner_control_gained_by_defender: '&6[War]&b Siege on %s > The defenders have gained banner control.'
+msg_siege_war_nation_refund_available: "A nation refund of %s is now available to you. It can be claimed using '/n refund'"
+msg_siege_war_nation_refund_claimed: "You have claimed the nation refund of %s."
 
 #Siege war error message
 #Town Toggling
@@ -1148,16 +1178,11 @@ msg_err_siege_besieged_town_cannot_recruit: "&6[War]&c Besieged towns cannot rec
 #Claiming
 msg_err_siege_claim_too_near_siege_zone: "&6[War]&c The claim is too close to a siege."
 msg_err_siege_besieged_town_cannot_claim: "&6[War]&c Besieged towns cannot claim new land."
-#Deleting
-msg_err_siege_war_delete_town_warning: "WARNING!!!: If you delete your town it will enter a ruined state for %s. In this state, all perms will be enabled & the town can be griefed."
-msg_err_siege_war_delete_nation_warning: "WARNING!!!: If you delete your nation you will be refunded %s."
-#Neutrality
-msg_err_siege_war_neutral_town_cannot_create_nation: "&cAs a neutral or declared-neutral town, you cannot create a nation."
-msg_err_siege_war_neutral_town_cannot_join_nation: "&cAs a neutral or declared-neutral town, you cannot join a nation."
-msg_err_siege_war_neutral_town_cannot_invite_to_nation: "&cYou cannot invite %s to the nation while it is neutral or declared-neutral."
-msg_err_siege_war_cannot_change_neutrality_while_in_nation: "&cYou cannot change neutrality status while in a nation."
+#Nation Delete
+msg_err_siege_war_delete_nation_warning: "WARNING!!!: If you delete your nation you will be refunded %s. This can be claimed later by using '/n refund'."
+msg_err_siege_war_nation_refund_unavailable: "There is no nation refund available to you."
 #Plunder
-msg_err_siege_war_neutral_town_cannot_plunder: "&6[War]&c You cannot plunder a neutral town."
+msg_err_siege_war_peaceful_town_cannot_plunder: "&6[War]&c You cannot plunder a peaceful town."
 #Revolt
 msg_err_siege_war_town_voluntary_leave_impossible: "&6[War]&c Towns cannot leave nations without agreement. To leave your nation, persuade the king (or an assistant) to kick your town."
 msg_err_siege_war_revolt_immunity_active: "&6[War]&c Your town has revolt immunity. It cannot revolt until the revolt immunity expires."
@@ -1171,7 +1196,6 @@ msg_err_siege_war_cannot_attack_non_enemy_nation: '&6[War]&c You cannot attack a
 msg_err_siege_war_too_many_town_blocks_nearby: '&6[War]&c You cannot perform this action because the area is facing more than one town block. Try placing the item in a different area. '
 msg_err_siege_war_nation_already_attacking_town: '&6[War]&c Your nation is already attacking this town.'
 msg_err_siege_war_cannot_attack_siege_immunity: '&6[War]&c The target town has siege immunity. It cannot be attacked until the siege immunity expires.'
-msg_err_siege_war_cannot_attack_ruined_town: '&6[War]&c You cannot attack a ruined town.'
 msg_err_siege_war_cannot_place_banner_far_above_town: 'The siege banner cannot be placed on a much higher elevation than the town. Try placing the banner at a lower elevation'
 msg_err_siege_war_cannot_join_siege: '&6[War]&c You cannot attack a town while it is under siege by another nation.'
 msg_err_siege_war_nation_has_too_many_active_siege_attacks: '&6[War]&c Your nation is at the maximum number of concurrent siege-attacks. To start another attack, one or more of the current attacks must finish.'
@@ -1201,14 +1225,11 @@ msg_err_siege_war_nation_zone_this_area_protected_but_besieged: '&6[War]&c This 
 msg_err_siege_war_banner_support_block_not_stable: "&6[War]&c You cannot place the banner on unstable ground e.g. sand or gravel."
 # Spawn
 msg_err_siege_war_cannot_spawn_into_besieged_town: '&6[War]&c You cannot spawn into %s while your nation, or an ally, is besieging it.'
-# Ruins
-msg_err_siege_war_cannot_use_command_because_town_ruined: "&6[War]&c You cannot use this command because your town is ruined. To resume normal command usage, either reclaim the town using ''/town reclaim'', or leave the town using ''/town leave''."
 #Banner control
-msg_siege_war_banner_control_session_failure: "&6[War]&c Banner control session failed!. Common causes for this include: Going into the town, going too far from the banner, going under a block, or going invisible/flying."
+msg_siege_war_banner_control_session_failure: '&6[War]&c Banner control session failed!. Common causes for this include: Going into the town, going too far from the banner, going under a block, or going invisible/flying.'
+msg_siege_war_resident_exceeded_max_timed_points: '&6[War]&c Siege on %s > You have achieved maximum timed siege points. You can no longer gain or contribute to banner control in this siege.'
 
 #Town Info Siege Section
-status_town_title_neutral: '&b (NEUTRAL)'
-status_town_neutrality_status_change_timer: '&2Countdown To Neutrality Status Change: &a%d days'
 status_town_revolt_immunity_timer: '&2Revolt Immunity Timer: &a%s'
 status_town_siege_status: '&2Siege: &a%s'
 status_town_siege_status_in_progress: 'In Progress'
@@ -1236,8 +1257,36 @@ msg_nobody: '&aNobody'
 msg_attackers: '&aAttackers'
 msg_defenders: '&aDefenders'
 
-#Town Ruins reclaim
+#Town Ruins
+admin_panel_4: 'Run the new hour code'
+msg_newhour_success: 'newhour command executed successfully'
 town_help_12: 'Reclaim your town from a ruined state.'
+msg_warning_town_ruined_if_deleted: "WARNING!!!: If you delete your town it will enter a ruined state for %d hours. In this state, all perms will be enabled & the town can be griefed."
 msg_err_cannot_reclaim_town_unless_ruined: '&cYou cannot reclaim your town because it is not ruined.'
-msg_err_cannot_reclaim_town_yet: '&cYou cannot reclaim your town for another %s.'
+msg_err_cannot_reclaim_town_yet: '&cYou cannot reclaim your town for another %d hours.'
 msg_town_reclaimed: '&b%s has reclaimed the town of %s.'
+msg_err_cannot_attack_ruined_town: '&6[War]&c You cannot attack a ruined town.'
+msg_err_cannot_use_command_because_town_ruined: "&cYou cannot use this command because your town is ruined. To resume normal command usage, either reclaim the town using ''/town reclaim'', or leave the town using ''/town leave''."
+
+#Town Peacefulness
+status_town_title_peaceful: '&b (PEACEFUL)'
+status_town_peacefulness_status_change_timer: '&2Countdown To Peacefulness Status Change: &a%d days'
+msg_war_common_town_declared_peaceful: '&bPeacefulness Declared!. The town will be confirmed as peaceful in %d day(s).'
+msg_war_common_town_declared_non_peaceful: '&bNon-Peacefulness Declared!. The town will be confirmed as non-peaceful in %d day(s).'
+msg_war_common_town_peacefulness_countdown_cancelled: '&bThe peacefulness status change countdown was cancelled.'
+msg_war_common_town_became_peaceful: '&b%s has been confirmed as Peaceful. PVP is forced off, and residents can no longer inflict PVP damage.'
+msg_war_common_town_became_non_peaceful: '&b%s has been confirmed as Not-Peaceful. PVP is no longer forced off, and residents can inflict PVP damage.'
+msg_war_common_resident_left_peaceful_town: '&cBecause you left a peaceful town, you will be unable to inflict PVP damage, for %s.'
+msg_war_common_peaceful_town_cannot_toggle_pvp: '&cCannot toggle PVP in peaceful towns. It is forced off.'
+
+msg_war_siege_town_became_peaceful: '&b%s has been confirmed as Peaceful. PVP is now forced off, and residents can no longer inflict PVP damage or gain nation-military ranks. The town is now immune to material siege costs (e.g. pillage, plunder, and occupier taxes).'
+msg_war_siege_town_became_non_peaceful: '&b%s has been confirmed as Not-Peaceful. PVP is no longer forced off, and residents can inflict PVP damage and gain nation-military ranks. The town is no longer immune to material siege costs (e.g. pillage, plunder, and occupier taxes).'
+msg_war_siege_resident_left_peaceful_town: '&cBecause you left a peaceful town, you will be unable to inflict PVP damage, or gain nation-military ranks, for %s.'
+msg_war_siege_cannot_add_nation_military_rank_to_peaceful_resident: '&cUnable to add military rank to resident, because they are in a peaceful town, or recently left one.'
+
+#Nation Refund
+nation_help_11 : 'Claim all your nation refunds.'
+
+# Added in 0.83
+msg_max_tax_amount_only_for_percent: "Max tax amounts can only be set for towns with tax percentages."
+msg_town_set_tax_max_percent_amount: "%s has set the max tax percent amount to %s."

@@ -135,7 +135,8 @@ public class ResidentCommand extends BaseCommand implements CommandExecutor {
 		} else
 			try {
 				parseResidentCommandForConsole(sender, args);
-			} catch (TownyException ignored) {
+			} catch (TownyException e) {
+				TownyMessaging.sendErrorMsg(sender, e.getMessage());
 			}
 
 		return true;
@@ -331,7 +332,7 @@ public class ResidentCommand extends BaseCommand implements CommandExecutor {
 					throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
 
 				Resident resident = townyUniverse.getDataSource().getResident(player.getName());
-				SpawnUtil.sendToTownySpawn(player, split, resident, TownySettings.getLangString("msg_err_cant_afford_tp"), false, SpawnType.RESIDENT);
+				SpawnUtil.sendToTownySpawn(player, split, resident, TownySettings.getLangString("msg_err_cant_afford_tp"), false, false, SpawnType.RESIDENT);
 
 			} else {
 

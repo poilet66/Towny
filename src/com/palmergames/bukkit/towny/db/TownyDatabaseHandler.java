@@ -28,13 +28,12 @@ import com.palmergames.bukkit.towny.object.Town;
 import com.palmergames.bukkit.towny.object.TownBlock;
 import com.palmergames.bukkit.towny.object.TownyPermission;
 import com.palmergames.bukkit.towny.object.TownyWorld;
-import com.palmergames.bukkit.towny.object.WorldCoord;
 import com.palmergames.bukkit.towny.regen.PlotBlockData;
 import com.palmergames.bukkit.towny.regen.TownyRegenAPI;
 import com.palmergames.bukkit.towny.war.eventwar.WarSpoils;
 import com.palmergames.bukkit.towny.war.siegewar.enums.SiegeStatus;
 import com.palmergames.bukkit.towny.war.siegewar.objects.Siege;
-import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarRuinsUtil;
+import com.palmergames.bukkit.towny.war.common.ruins.RuinsUtil;
 import com.palmergames.bukkit.towny.war.siegewar.utils.SiegeWarTimeUtil;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.NameValidation;
@@ -43,6 +42,8 @@ import org.bukkit.entity.Player;
 import javax.naming.InvalidNameException;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -335,44 +336,6 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 		BukkitTools.getPluginManager().callEvent(new DeletePlayerEvent(resident.getName()));
 	}
 
-	public void removeOneOfManyTownBlocks(TownBlock townBlock, Town town) {
-		
-		TownPreUnclaimEvent event = new TownPreUnclaimEvent(townBlock);
-		BukkitTools.getPluginManager().callEvent(event);
-		
-		if (event.isCancelled())
-			return;
-
-		Resident resident = null;
-		try {
-			resident = townBlock.getResident();
-		} catch (NotRegisteredException ignored) {
-		}
-		
-		TownyWorld world = townBlock.getWorld();
-		WorldCoord coord = townBlock.getWorldCoord(); 
-
-		if (world.isUsingPlotManagementDelete())
-			TownyRegenAPI.addDeleteTownBlockIdQueue(coord);
-
-		// Move the plot to be restored
-		if (world.isUsingPlotManagementRevert()) {
-			PlotBlockData plotData = TownyRegenAPI.getPlotChunkSnapshot(townBlock);
-			if (plotData != null && !plotData.getBlockList().isEmpty()) {
-				TownyRegenAPI.addPlotChunk(plotData, true);
-			}
-		}
-
-		if (resident != null)
-			saveResident(resident);
-
-		world.removeTownBlock(townBlock);
-
-		deleteTownBlock(townBlock);
-		// Raise an event to signal the unclaim
-		BukkitTools.getPluginManager().callEvent(new TownUnclaimEvent(town, coord));	
-	}
-	
 	@Override
 	public void removeTownBlock(TownBlock townBlock) {
 
@@ -393,13 +356,8 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 		} catch (NotRegisteredException ignored) {
 		}
 
-		TownyWorld world = townBlock.getWorld();
-		world.removeTownBlock(townBlock);
-
-		saveWorld(world);
+		TownyUniverse.getInstance().removeTownBlock(townBlock);
 		deleteTownBlock(townBlock);
-
-		saveTownBlockList();
 
 //		if (resident != null)           - Removed in 0.95.2.5, residents don't store townblocks in them.
 //			saveResident(resident);
@@ -427,20 +385,10 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 		for (TownBlock townBlock : new ArrayList<>(town.getTownBlocks()))
 			removeTownBlock(townBlock);
 	}
-	
-	public void removeManyTownBlocks(Town town) {
-
-		for (TownBlock townBlock : new ArrayList<>(town.getTownBlocks()))
-			removeOneOfManyTownBlocks(townBlock, town);
-		saveTownBlockList();
-	}
 
 	@Override
-	public List<TownBlock> getAllTownBlocks() {
-		List<TownBlock> townBlocks = new ArrayList<>();
-		for (TownyWorld world : getWorlds())
-			townBlocks.addAll(world.getTownBlocks());
-		return townBlocks;
+	public Collection<TownBlock> getAllTownBlocks() {
+		return TownyUniverse.getInstance().getTownBlocks().values();
 	}
 	
 	public List<PlotGroup> getAllPlotGroups() {
@@ -470,52 +418,34 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 
 	@Override
 	public void newTown(String name) throws AlreadyRegisteredException, NotRegisteredException {
-
-		lock.lock();
-
+		String filteredName;
 		try {
-
-			String filteredName;
-			try {
-				filteredName = NameValidation.checkAndFilterName(name);
-			} catch (InvalidNameException e) {
-				throw new NotRegisteredException(e.getMessage());
-			}
-
-			if (universe.getTownsMap().containsKey(filteredName.toLowerCase()))
-				throw new AlreadyRegisteredException("The town " + filteredName + " is already in use.");
-
-			universe.getTownsMap().put(filteredName.toLowerCase(), new Town(filteredName));
-			universe.getTownsTrie().addKey(filteredName);
-
-		} finally {
-			lock.unlock();
+			filteredName = NameValidation.checkAndFilterName(name);
+		} catch (InvalidNameException e) {
+			throw new NotRegisteredException(e.getMessage());
 		}
+
+		if (universe.getTownsMap().containsKey(filteredName.toLowerCase()))
+			throw new AlreadyRegisteredException("The town " + filteredName + " is already in use.");
+
+		universe.getTownsMap().put(filteredName.toLowerCase(), new Town(filteredName));
+		universe.getTownsTrie().addKey(filteredName);
 	}
 
 	@Override
 	public void newNation(String name) throws AlreadyRegisteredException, NotRegisteredException {
-
-		lock.lock();
-
+		String filteredName;
 		try {
-
-			String filteredName;
-			try {
-				filteredName = NameValidation.checkAndFilterName(name);
-			} catch (InvalidNameException e) {
-				throw new NotRegisteredException(e.getMessage());
-			}
-
-			if (universe.getNationsMap().containsKey(filteredName.toLowerCase()))
-				throw new AlreadyRegisteredException("The nation " + filteredName + " is already in use.");
-
-			universe.getNationsMap().put(filteredName.toLowerCase(), new Nation(filteredName));
-			universe.getNationsTrie().addKey(filteredName);
-
-		} finally {
-			lock.unlock();
+			filteredName = NameValidation.checkAndFilterName(name);
+		} catch (InvalidNameException e) {
+			throw new NotRegisteredException(e.getMessage());
 		}
+
+		if (universe.getNationsMap().containsKey(filteredName.toLowerCase()))
+			throw new AlreadyRegisteredException("The nation " + filteredName + " is already in use.");
+
+		universe.getNationsMap().put(filteredName.toLowerCase(), new Nation(filteredName));
+		universe.getNationsTrie().addKey(filteredName);
 	}
 
 	@Override
@@ -581,14 +511,14 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 
 	@Override
 	public void removeTown(Town town) {
-		boolean delayFullRemoval = TownySettings.getWarSiegeEnabled() && TownySettings.getWarSiegeDelayFullTownRemoval();
+		boolean delayFullRemoval = TownySettings.getWarCommonTownRuinsEnabled();
 		removeTown(town, delayFullRemoval);
 	}
 
 	@Override
 	public void removeTown(Town town, boolean delayFullRemoval) {
 		if (delayFullRemoval) {
-			SiegeWarRuinsUtil.putTownIntoRuinedState(town, plugin);
+			RuinsUtil.putTownIntoRuinedState(town, plugin);
 			return;
 		}
 
@@ -598,8 +528,7 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 		if (preEvent.isCancelled())
 			return;
 
-		removeManyTownBlocks(town);
-		//removeTownBlocks(town);
+		removeTownBlocks(town);
 
 		if (town.hasSiege())
 			removeSiege(town.getSiege());
@@ -758,18 +687,18 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 		if (TownySettings.getWarSiegeEnabled()
 			&& TownySettings.isUsingEconomy()
 			&& TownySettings.getWarSiegeRefundInitialNationCostOnDelete()) {
-			try {
-				//Refund the king with some of the initial nation setup cost
-				double amountToRefund = Math.round(TownySettings.getNewNationPrice() * 0.01 * TownySettings.getWarSiegeNationCostRefundPercentageOnDelete());
-				king.getAccount().collect(amountToRefund, "Refund of Some of the Initial Nation Cost");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			TownyMessaging.sendGlobalMessage(
+
+			//Make the nation refund available
+			//The player can later do "/n claim refund" to receive the money
+			int amountToRefund = (int)(TownySettings.getNewNationPrice() * 0.01 * TownySettings.getWarSiegeNationCostRefundPercentageOnDelete());
+			king.addToNationRefundAmount(amountToRefund);
+			saveResident(king);
+
+			TownyMessaging.sendMsg(
+				king,
 				String.format(
-					TownySettings.getLangString("msg_siege_war_refund_initial_cost_on_nation_delete"),
-					king.getFormattedName(),
-					TownySettings.getWarSiegeNationCostRefundPercentageOnDelete() + "%"));
+					TownySettings.getLangString("msg_siege_war_nation_refund_available"),
+					TownyEconomyHandler.getFormattedBalance(amountToRefund)));
 		}
 
 		BukkitTools.getPluginManager().callEvent(new DeleteNationEvent(nation.getName()));
@@ -1193,7 +1122,11 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			resident.setTitle(title);
 			resident.setTown(town);
 			resident.setTownblocks(townBlocks);
-			resident.setTownRanks(townRanks);
+			try {
+				resident.setTownRanks(townRanks);
+			} catch (ConcurrentModificationException ignored) {
+				// If this gets tripped by TownyNameUpdater in the future we will at least not be deleting anyone, they just won't have their townranks.
+			}
 			resident.setRegistered(registered);
 			resident.setLastOnline(lastOnline);
 			if(isMayor){
@@ -1247,7 +1180,13 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			}
 			for (Town toCheckTown : toSaveTown)
 				saveTown(toCheckTown);	
-		
+
+			//Save any siege files which contain the resident name
+			for(Siege siege: getSieges()) {
+				if(siege.getResidentTotalTimedPointsMap().containsKey(resident))
+					saveSiege(siege);
+			}
+
 		} finally {
 			lock.unlock();			
 		}

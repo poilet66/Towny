@@ -56,7 +56,6 @@ public class TownyFormatter {
 	}
 
 	public static List<String> getFormattedResidents(Town town) {
-
 		String[] residents = getFormattedNames(town.getResidents().toArray(new Resident[0]));
 
 		return new ArrayList<>(ChatTools.listArr(residents, Colors.Green + TownySettings.getLangString("res_list") + " " + Colors.LightGreen + "[" + town.getNumResidents() + "]" + Colors.Green + ":" + Colors.White + " "));
@@ -331,13 +330,13 @@ public class TownyFormatter {
 		String title = town.getFormattedName();
 		title += ((!town.isAdminDisabledPVP()) && ((town.isPVP() || town.getHomeblockWorld().isForcePVP())) ? TownySettings.getLangString("status_title_pvp") : "");
 		title += (town.isOpen() ? TownySettings.getLangString("status_title_open") : "");
-		title += (town.isNeutral() ? TownySettings.getLangString("status_town_title_neutral") : "");
+		title += (TownySettings.getWarCommonPeacefulTownsEnabled() && town.isPeaceful() ? TownySettings.getLangString("status_town_title_peaceful") : "");
 		out.add(ChatTools.formatTitle(title));
 
 		// Lord: Mayor Quimby
 		// Board: Get your fried chicken
 		try {
-			out.addAll(ChatTools.color(String.format(TownySettings.getLangString("status_town_board"), town.getTownBoard())));
+			out.add(String.format(TownySettings.getLangString("status_town_board"), town.getTownBoard()));
 		} catch (NullPointerException ignored) {
 		}
 		// Created Date
@@ -427,15 +426,15 @@ public class TownyFormatter {
 			}
 			out.addAll(ChatTools.listArr(residents, String.format(TownySettings.getLangString("status_town_reslist"), town.getNumResidents() )));
 
+			//Countdown To Peacefulness Status Change: 3 days
+			if(TownySettings.getWarCommonPeacefulTownsEnabled()
+				&& town.getPeacefulnessChangeConfirmationCounterDays() > 0
+				&& town.isPeaceful() != town.getDesiredPeacefulnessValue()) {
+				out.add(String.format(TownySettings.getLangString("status_town_peacefulness_status_change_timer"), town.getPeacefulnessChangeConfirmationCounterDays()));
+			}
+
 			//Siege  Info
 			if(TownySettings.getWarSiegeEnabled()) {
-				
-				//Countdown To Neutrality Status Change: 3 days
-				if(TownySettings.getWarSiegeTownNeutralityEnabled() 
-					&& town.getNeutralityChangeConfirmationCounterDays() > 0
-					&& town.isNeutral() != town.getDesiredNeutralityValue()) {
-					out.add(String.format(TownySettings.getLangString("status_town_neutrality_status_change_timer"), town.getNeutralityChangeConfirmationCounterDays()));
-				}
 
 				//Revolt Immunity Timer: 71.8 hours
 				if(TownySettings.getWarSiegeRevoltEnabled() && town.isRevoltImmunityActive()) {

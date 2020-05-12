@@ -49,6 +49,9 @@ public class Siege {
 	private List<Resident> bannerControllingResidents;
 	private SiegeSide bannerControllingSide;
 	private Map<Player, BannerControlSession> bannerControlSessions;
+	private Map<Resident, Integer> residentTotalTimedPointsMap;  //The total timed siege-points earned by individual residents in this siege
+	private boolean attackerHasLowestPopulation;
+	private double siegePointModifierForSideWithLowestPopulation;
 
 	public Siege(String name) {
         this.name = name;
@@ -60,6 +63,9 @@ public class Siege {
 		bannerControllingResidents = new ArrayList<>();
 		bannerControllingSide = SiegeSide.NOBODY;
 		bannerControlSessions = new HashMap<>();
+		residentTotalTimedPointsMap = new HashMap<>();
+		attackerHasLowestPopulation = false;
+		siegePointModifierForSideWithLowestPopulation = 0;  //0 is the special starting value
     }
 
 	public Nation getAttackingNation() {
@@ -213,6 +219,10 @@ public class Siege {
 		bannerControllingResidents.add(resident);
 	}
 
+	public void removeBannerControllingResident(Resident resident) {
+		bannerControllingResidents.remove(resident);
+	}
+
 	public void clearBannerControllingResidents() {
 		bannerControllingResidents.clear();
 	}
@@ -244,5 +254,32 @@ public class Siege {
 	@Override
 	public String toString() {
 		return name;
+	}
+
+	public Map<Resident, Integer> getResidentTotalTimedPointsMap() {
+		return residentTotalTimedPointsMap;
+	}
+
+	public void increaseResidentTotalTimedPoints(List<Resident> residentsEarningTimedPoints, int timedPointsGain) {
+		for(Resident resident: residentsEarningTimedPoints) {
+			int newPoints = residentTotalTimedPointsMap.get(resident) + timedPointsGain;
+			residentTotalTimedPointsMap.put(resident, newPoints);
+		}
+	}
+
+	public double getSiegePointModifierForSideWithLowestPopulation() {
+		return siegePointModifierForSideWithLowestPopulation;
+	}
+
+	public void setSiegePointModifierForSideWithLowestPopulation(double siegePointModifierForSideWithLowestPopulation) {
+		this.siegePointModifierForSideWithLowestPopulation = siegePointModifierForSideWithLowestPopulation;
+	}
+
+	public boolean isAttackerHasLowestPopulation() {
+		return attackerHasLowestPopulation;
+	}
+
+	public void setAttackerHasLowestPopulation(boolean attackerHasLowestPopulation) {
+		this.attackerHasLowestPopulation = attackerHasLowestPopulation;
 	}
 }
