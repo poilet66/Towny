@@ -485,6 +485,7 @@ public class TownyFormatter {
 
 						case ATTACKER_WIN:
 						case DEFENDER_SURRENDER:
+						case PENDING_DEFENDER_SURRENDER:
 							siegeStatus = String.format(TownySettings.getLangString("status_town_siege_status"), getStatusTownSiegeSummary(siege));
 							String invadedYesNo = siege.isTownInvaded() ? TownySettings.getLangString("status_yes") : TownySettings.getLangString("status_no_green");
 							String plunderedYesNo = siege.isTownPlundered() ? TownySettings.getLangString("status_yes") : TownySettings.getLangString("status_no_green");
@@ -497,6 +498,7 @@ public class TownyFormatter {
 
 						case DEFENDER_WIN:
 						case ATTACKER_ABANDON:
+						case PENDING_ATTACKER_ABANDON:
 							siegeStatus= String.format(TownySettings.getLangString("status_town_siege_status"), getStatusTownSiegeSummary(siege));
 							siegeImmunityTimer = String.format(TownySettings.getLangString("status_town_siege_immunity_timer"), town.getFormattedHoursUntilSiegeImmunityEnds());
 							out.add(siegeStatus);
@@ -655,6 +657,10 @@ public class TownyFormatter {
 				return TownySettings.getLangString("status_town_siege_status_defender_win");
 			case ATTACKER_ABANDON:
 				return TownySettings.getLangString("status_town_siege_status_attacker_abandon");
+			case PENDING_DEFENDER_SURRENDER:
+				return String.format(TownySettings.getLangString("status_town_siege_status_pending_defender_surrender"), siege.getAttackingNation().getFormattedName(), siege.getFormattedTimeUntilDefenderSurrender());
+			case PENDING_ATTACKER_ABANDON:
+				return String.format(TownySettings.getLangString("status_town_siege_status_pending_attacker_abandon"), siege.getFormattedTimeUntilAttackerAbandon());
 			default:
 				return "???";
 		}

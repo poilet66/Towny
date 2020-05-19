@@ -48,16 +48,9 @@ public class SurrenderTown {
                 throw new TownyException(TownySettings.getLangString("msg_err_command_disable"));
 
             Siege siege = townWhereBlockWasPlaced.getSiege();
-            if(siege.getStatus() != SiegeStatus.IN_PROGRESS)
+            if(!siege.getStatus().isActive())
 				throw new TownyException(TownySettings.getLangString("msg_err_siege_war_cannot_surrender_siege_finished"));
 
-            long timeUntilSurrenderIsAllowedMillis = siege.getTimeUntilSurrenderIsAllowedMillis();
-            if(timeUntilSurrenderIsAllowedMillis > 0) {
-				String message = String.format(TownySettings.getLangString("msg_err_siege_war_cannot_surrender_yet"), 
-					TimeMgmt.getFormattedTimeValue(timeUntilSurrenderIsAllowedMillis));
-				throw new TownyException(message);
-			}
-            
             //Surrender
             defenderSurrender(siege);
 
@@ -69,13 +62,26 @@ public class SurrenderTown {
     }
 
     private static void defenderSurrender(Siege siege) {
-		SiegeWarMoneyUtil.giveWarChestToAttackingNation(siege);
-		
-        SiegeWarSiegeCompletionUtil.updateSiegeValuesToComplete(siege, SiegeStatus.DEFENDER_SURRENDER);
 
-        TownyMessaging.sendGlobalMessage(String.format(
-        	TownySettings.getLangString("msg_siege_war_town_surrender"),
-			siege.getDefendingTown().getFormattedName(),
-			siege.getAttackingNation().getFormattedName()));
+		long timeUntilSurrenderConfirmation = siege.getTimeUntilSurrenderConfirmationMillis();
+
+		if(timeUntilSurrenderConfirmation > 0) {
+			//Pending surrender
+			siege.setStatus(SiegeStatus.PENDING_DEFENDER_SURRENDER);
+			TownyUniverse.getInstance().getDataSource().saveSiege(siege);
+			TownyMessaging.sendGlobalMessage(String.format(
+				TownySettings.getLangString("msg_siege_war_pending_town_surrender"),
+				siege.getDefendingTown().getFormattedName(),
+				siege.getAttackingNation().getFormattedName(),
+				TimeMgmt.getFormattedTimeValue(timeUntilSurrenderConfirmation)));
+		} else {
+			//Immediate surrender
+			SiegeWarMoneyUtil.giveWarChestToAttackingNation(siege);
+			SiegeWarSiegeCompletionUtil.updateSiegeValuesToComplete(siege, SiegeStatus.DEFENDER_SURRENDER);
+			TownyMessaging.sendGlobalMessage(String.format(
+				TownySettings.getLangString("msg_siege_war_town_surrender"),
+				siege.getDefendingTown().getFormattedName(),
+				siege.getAttackingNation().getFormattedName()));
+		}
     }
 }
