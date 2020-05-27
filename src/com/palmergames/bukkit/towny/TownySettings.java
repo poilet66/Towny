@@ -50,6 +50,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TownySettings {
 
+	public static int getMaxHealingPotionsPerShortTick() {
+		return 0;
+	}
+
+	public static boolean isHealingPotionLimiterEnabled() {
+		return true;
+	}
+
 	// Town Level
 	public enum TownLevel {
 		NAME_PREFIX, NAME_POSTFIX, MAYOR_PREFIX, MAYOR_POSTFIX, TOWN_BLOCK_LIMIT, UPKEEP_MULTIPLIER, OUTPOST_LIMIT, TOWN_BLOCK_BUY_BONUS_LIMIT

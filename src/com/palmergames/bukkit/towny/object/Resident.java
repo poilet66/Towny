@@ -59,6 +59,7 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 	private int postTownLeavePeacefulHoursRemaining = 0;
 	private boolean postRespawnPeacefulEnabled = false;
 	private int postRespawnPeacefulShortTicksRemaining = 0;
+	private int numRecentHealingPotions = 0;
 
 	public Resident(String name) {
 		super(name);
@@ -900,6 +901,18 @@ public class Resident extends TownyObject implements TownyInviteReceiver, Econom
 
 	public void addToNationRefundAmount(int amountToRefund) {
 		this.nationRefundAmount += amountToRefund;
+	}
+
+	public int getNumRecentHealingPotions() {
+		return numRecentHealingPotions;
+	}
+
+	public void clearNumRecentHealingPotions() {
+		numRecentHealingPotions = 0;
+	}
+
+	public void incrementNumRecentHealingPotionsUsed() {
+		numRecentHealingPotions++;
 	}
 }
 
