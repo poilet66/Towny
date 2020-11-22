@@ -214,7 +214,7 @@ public class SiegeWarPointsUtil {
 	 * @param unformattedErrorMessage the error message to be shown if points are deducted
 	 */
 	public static void awardPenaltyPoints(boolean residentIsAttacker,
-											 Player player,
+										     Player player,
 											 Resident resident,
 											 Siege siege,
 											 String unformattedErrorMessage) {
@@ -253,6 +253,69 @@ public class SiegeWarPointsUtil {
 		String message = String.format(
 			unformattedErrorMessage,
 			siege.getDefendingTown().getName(),
+			residentInformationString,
+			Math.abs(siegePoints));
+
+		SiegeWarNotificationUtil.informSiegeParticipants(siege, message);
+	}
+	
+	public static void awardPenaltyPointsKill(boolean residentIsAttacker,
+											     Player player,
+											     Resident resident,
+											     Resident killerRes,
+											     Siege siege,
+											     String unformattedErrorMessage) {
+		//Give siege points to opposing side
+		int siegePoints;
+		if (residentIsAttacker) {
+			siegePoints = -TownySettings.getWarSiegePointsForAttackerDeath();
+			siegePoints = adjustSiegePointPenaltyForBannerControl(true, siegePoints, siege);
+			siegePoints = adjustSiegePenaltyPointsForMilitaryLeadership(true, siegePoints, player, resident, siege);
+			siegePoints = adjustSiegePointsForPopulationQuotient(false, siegePoints, siege);
+			siege.adjustAttackerDeaths(1);
+			siege.adjustSiegePoints(siegePoints);
+		} else {
+			siegePoints = TownySettings.getWarSiegePointsForDefenderDeath();
+			siegePoints = adjustSiegePointPenaltyForBannerControl(false, siegePoints, siege);
+			siegePoints = adjustSiegePenaltyPointsForMilitaryLeadership(false, siegePoints, player, resident, siege);
+			siegePoints = adjustSiegePointsForPopulationQuotient(true, siegePoints, siege);
+			siege.adjustDefenderDeaths(1);
+			siege.adjustSiegePoints(siegePoints);
+		}
+
+		TownyUniverse.getInstance().getDataSource().saveSiege(siege);
+
+		//Send messages to siege participants
+		String residentInformationString;
+		try {
+			if(resident.hasTown()) {
+				Town residentTown = resident.getTown();
+				if(residentTown.hasNation())
+					residentInformationString = resident.getName() + " (" + residentTown.getName() + " | " + residentTown.getNation().getName() + ")";
+				else
+					residentInformationString = resident.getName() + " (" + residentTown.getName() + ")";
+			} else {
+				residentInformationString = resident.getName();
+			}
+		} catch (NotRegisteredException e) { residentInformationString = ""; }
+		
+		String killerResidentInformationString;
+		try {
+			if(killerRes.hasTown()) {
+				Town killerResidentTown = killerRes.getTown();
+				if(killerResidentTown.hasNation())
+					killerResidentInformationString = killerRes.getName() + " (" + killerResidentTown.getName() + " | " + killerResidentTown.getNation().getName() + ")";
+				else
+					killerResidentInformationString = resident.getName() + " (" + killerResidentTown.getName() + ")";
+			} else {
+				killerResidentInformationString = resident.getName();
+			}
+		} catch (NotRegisteredException e) { killerResidentInformationString = ""; }
+
+		String message = String.format(
+			unformattedErrorMessage,
+			siege.getDefendingTown().getName(),
+			killerResidentInformationString,
 			residentInformationString,
 			Math.abs(siegePoints));
 

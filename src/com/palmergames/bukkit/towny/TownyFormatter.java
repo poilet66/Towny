@@ -494,6 +494,13 @@ public class TownyFormatter {
 							}
 							outForNonRuinedTowns.addAll(ChatTools.listArr(bannerControllingResidents, String.format(TownySettings.getLangString("status_town_banner_control"), siege.getBannerControllingSide().getFormattedName(), siege.getBannerControllingResidents().size())));
 						}
+						
+						// > Attacker Deaths: 15
+						String attackerDeaths = String.format(TownySettings.getLangString("status_town_attacker_deaths"), siege.getAttackerDeaths());
+						outForNonRuinedTowns.add(attackerDeaths);
+						// > Defender Deaths: 12
+						String defenderDeaths = String.format(TownySettings.getLangString("status_town_defender_deaths"), siege.getDefenderDeaths());
+						outForNonRuinedTowns.add(defenderDeaths);
 						break;
 
 					case ATTACKER_WIN:

@@ -45,6 +45,8 @@ public class Siege {
 	private double totalPillageAmount;     //The total amount pillaged so far from the town
 	private Location siegeBannerLocation;
 	private int siegePoints;
+	private int defenderDeaths;
+	private int attackerDeaths;
 	private double warChestAmount;
 	private List<Resident> bannerControllingResidents;
 	private SiegeSide bannerControllingSide;
@@ -57,6 +59,8 @@ public class Siege {
         status = SiegeStatus.IN_PROGRESS;
 		attackingNation = null;
 		siegePoints = 0;
+		defenderDeaths = 0;
+		attackerDeaths = 0;
 		siegeBannerLocation = null;
 		warChestAmount = 0;
 		bannerControllingResidents = new ArrayList<>();
@@ -178,8 +182,22 @@ public class Siege {
 	public void setDefendingTown(Town defendingTown) {
 		this.defendingTown = defendingTown;
 	}
-
-
+	
+	public int getDefenderDeaths() {
+		return defenderDeaths;
+	}
+	
+	public int getAttackerDeaths() {
+		return attackerDeaths;
+	}
+	
+	public void adjustAttackerDeaths(int amount) {
+		this.attackerDeaths += amount;
+	}
+	
+	public void adjustDefenderDeaths(int amount) {
+		this.defenderDeaths += amount;
+	}
 
 	public Location getFlagLocation() {
 		return siegeBannerLocation;

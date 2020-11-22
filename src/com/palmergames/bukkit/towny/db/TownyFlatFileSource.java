@@ -1453,6 +1453,12 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 
 				line = keys.get("totalPillageAmount");
 				siege.setTotalPillageAmount(Double.parseDouble(line));
+				
+				line = keys.get("attackerDeaths");
+				siege.adjustAttackerDeaths(siege.getAttackerDeaths() + Integer.parseInt(line));
+				
+				line = keys.get("defenderDeaths");
+				siege.adjustDefenderDeaths(siege.getDefenderDeaths() + Integer.parseInt(line));
 
 			} catch (Exception e) {
 				String filename = getSiegeFilename(siege);
@@ -2360,6 +2366,8 @@ public final class TownyFlatFileSource extends TownyDatabaseHandler {
 		list.add("scheduledEndTime=" + siege.getScheduledEndTime());
 		list.add("actualEndTime=" + siege.getActualEndTime());
 		list.add("totalPillageAmount=" + siege.getTotalPillageAmount());
+		list.add("attackerDeaths=" + siege.getAttackerDeaths());
+		list.add("defenderDeaths=" + siege.getDefenderDeaths());
 
 		/*
 		 *  Make sure we only save in async

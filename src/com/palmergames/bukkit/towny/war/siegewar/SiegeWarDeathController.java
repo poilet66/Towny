@@ -117,20 +117,46 @@ public class SiegeWarDeathController {
 			if(confirmedCandidateSiege != null) {
 
 				if(confirmedCandidateSiegePlayerSide == SiegeSide.DEFENDERS) {
-					SiegeWarPointsUtil.awardPenaltyPoints(
-						false,
-						deadPlayer,
-						deadResident,
-						confirmedCandidateSiege,
-						TownySettings.getLangString("msg_siege_war_defender_death"));
+					if(playerDeathEvent.getEntity().getKiller() == null) {
+						SiegeWarPointsUtil.awardPenaltyPoints(
+							false,
+							deadPlayer,
+							deadResident,
+							confirmedCandidateSiege,
+							TownySettings.getLangString("msg_siege_war_defender_death"));
+					} else {
+						Player killer = playerDeathEvent.getEntity().getKiller();
+						Resident killerRes = universe.getDataSource().getResident(killer.getName());
+						SiegeWarPointsUtil.awardPenaltyPointsKill(
+							false,
+							deadPlayer,
+							deadResident,
+							killerRes,
+							confirmedCandidateSiege,
+							TownySettings.getLangString("msg_siege_war_defender_death_player"));
+					}
+					
 
 				} else {
-					SiegeWarPointsUtil.awardPenaltyPoints(
-						true,
-						deadPlayer,
-						deadResident,
-						confirmedCandidateSiege,
-						TownySettings.getLangString("msg_siege_war_attacker_death"));
+					if(playerDeathEvent.getEntity().getKiller() == null) {
+						SiegeWarPointsUtil.awardPenaltyPoints(
+							true,
+							deadPlayer,
+							deadResident,
+							confirmedCandidateSiege,
+							TownySettings.getLangString("msg_siege_war_attacker_death"));
+					} else {
+						Player killer = playerDeathEvent.getEntity().getKiller();
+						Resident killerRes = universe.getDataSource().getResident(killer.getName());
+						SiegeWarPointsUtil.awardPenaltyPointsKill(
+							true,
+							deadPlayer,
+							deadResident,
+							killerRes,
+							confirmedCandidateSiege,
+							TownySettings.getLangString("msg_siege_war_attacker_death_player"));
+					}
+					
 				}
 
 				keepInventory(playerDeathEvent);

@@ -1162,6 +1162,9 @@ msg_siege_war_attack_pay_war_chest: '&6[War]&b A war-chest has been prepared by 
 msg_siege_war_attack_recover_war_chest: '&6[War]&b The war chest has been recovered by %s, with a value of %s.'
 msg_siege_war_attacker_death: '&6[War]&b Siege on %s > An attacker died > @%s. Siege points -%d.'
 msg_siege_war_defender_death: '&6[War]&b Siege on %s > A defender died > @%s. Siege points +%d.'
+#msg_siege_war_defender_death_player: '&6[War]&b Siege on %s > A defender died to (ATTACKER/DEFENDER) @&c%s &b> @&a%s. &bSiege points +%d.'
+msg_siege_war_defender_death_player: '&6[War]&b Siege on %s > Defender %s died to %s > Siege points +%d.'
+msg_siege_war_attacker_death_player: '&6[War]&b Siege on %s > Attacker %s died to %s > Siege points -%d.'
 msg_siege_war_resident_leave_town: '&6[War]&b Siege on %s > A military-ranked player (online or offline) was removed from their town while near the banner > @%s. Siege point penalty applied (%d).'
 msg_siege_war_resident_town_rank_removed: '&6[War]&b Siege on %s > A military-ranked player (online or offline) had their town rank removed while near the banner > @%s. Siege point penalty applied (%d).'
 msg_siege_war_resident_nation_rank_removed: '&6[War]&b Siege on %s > A military-ranked player (online or offline) had their nation rank removed while near the banner > @%s. Siege point penalty applied (%d).'
@@ -1273,6 +1276,8 @@ status_town_siege_victory_timer: '&2 > Victory Timer: &a%s'
 status_town_siege_invaded_plundered_status: '&2 > Town Captured: %s  &2Town Plundered: %s'
 status_town_banner_control: '&2 > Banner Control: %s &a[%s]&2: &f'
 status_town_banner_control_nobody: '&2 > Banner Control: %s'
+status_town_attacker_deaths: '&2 > Attacker Deaths:  &a%d'
+status_town_defender_deaths: '&2 > Defender Deaths: &a%d'
 
 #Nation Info Siege Section
 status_nation_siege_attacks: '&2Siege Attacks &a[%s]&2: &f'
